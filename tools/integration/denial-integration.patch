@@ -1,0 +1,231 @@
+diff --git a/dart_shell/lib/main.dart b/dart_shell/lib/main.dart
+index 9acfbd4..6e504d3 100644
+--- a/dart_shell/lib/main.dart
++++ b/dart_shell/lib/main.dart
+@@ -1,6 +1,15 @@
+ import 'denial.dart';
+ import 'denial_default_shell.dart';
++import 'lwe_local_app.dart';
+ 
+ Future<void> main() async {
+-  await runDenialShell(shell: const DenialShellApp());
++  await runDenialShell(
++    shell: const DenialShellApp(),
++    // Hosts denial's real settings UI in the shell, opened on the Wallpaper
++    // Engine page. Replaces nothing under /usr/lib, so `denialctl ui restore`
++    // reverts everything. See lwe_local_app.dart.
++    localApplications: (_) => <LocalFlutterApplication>[
++      lweSettingsLocalApplication,
++    ],
++  );
+ }
+diff --git a/dart_shell/lib/src/desktop/desktop_shell.dart b/dart_shell/lib/src/desktop/desktop_shell.dart
+index 32cbacb..91cff80 100644
+--- a/dart_shell/lib/src/desktop/desktop_shell.dart
++++ b/dart_shell/lib/src/desktop/desktop_shell.dart
+@@ -712,6 +712,20 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
+   void _openSettingsPage(SettingsPageId? page) {
+     final environment = ref.read(startupEnvironmentProvider);
+     _closePanels();
++
++    // Prefer the in-shell settings window when a host registered one. It can
++    // contribute to the stock pages (the Wallpaper Engine panel rides along in
++    // Appearance > Wallpaper), and it is the only variant that can be extended
++    // without rebuilding the packaged denial-settings bundle, whose
++    // product-mode engine rejects a profile AOT snapshot.
++    final launcher = ref.read(localFlutterApplicationLauncherProvider);
++    if (launcher.launch(
++      inShellSettingsAppId,
++      availableBounds: _availableBounds(),
++    )) {
++      return;
++    }
++
+     for (final window in ref.read(shellControllerProvider).openAppWindows) {
+       if (isDenialSettingsApplicationId(window.appId)) {
+         _activateWindow(window);
+@@ -731,6 +745,22 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
+     ]);
+   }
+ 
++  /// Available desktop area for centring a new settings window.
++  Rect _availableBounds() {
++    final displayLayout = ref.read(displayLayoutProvider);
++    if (displayLayout == null) {
++      final view = MediaQuery.maybeSizeOf(context);
++      return Offset.zero & (view ?? const Size(1280, 800));
++    }
++    final outputs = displayLayout.outputs;
++    if (outputs.isEmpty) {
++      return Offset.zero & displayLayout.logicalSize;
++    }
++    return outputs
++        .map((output) => output.logicalRect)
++        .reduce((a, b) => a.expandToInclude(b));
++  }
++
+   Future<void> _showWallpaperSelector() async {
+     var displayLayout = ref.read(displayLayoutProvider);
+     displayLayout ??= await ref
+diff --git a/dart_shell/lib/src/features/default_shell/default_shell_app.dart b/dart_shell/lib/src/features/default_shell/default_shell_app.dart
+index ae8c8ed..cba7f40 100644
+--- a/dart_shell/lib/src/features/default_shell/default_shell_app.dart
++++ b/dart_shell/lib/src/features/default_shell/default_shell_app.dart
+@@ -11,6 +11,7 @@ import '../../wallpaper/widgets/mobile_wallpaper_selector_layer.dart';
+ import '../../widgets/connectivity/bluetooth_detail_surface.dart';
+ import '../../widgets/notification_banner.dart';
+ import '../../widgets/system_level_hud.dart';
++import '../../../lwe_shell_integration.dart';
+ import '../mobile/mobile_application_scene.dart';
+ import '../mobile/mobile_frame_timing_overlay.dart';
+ 
+@@ -33,11 +34,16 @@ class DenialShellApp extends StatelessWidget {
+           MobileWallpaperSelectorLayer(),
+           MobileFrameTimingOverlay(),
+           GlassBenchmarkLayer(),
++          LweShellIntegration(),
+         ],
+       ),
+       desktop: DenialShellScene(
+         content: DesktopShell(),
+-        overlays: <Widget>[SystemLevelHudLayer(), NotificationBannerLayer()],
++        overlays: <Widget>[
++          SystemLevelHudLayer(),
++          NotificationBannerLayer(),
++          LweShellIntegration(),
++        ],
+       ),
+       pairingSurfaceBuilder: _buildPairingSurface,
+       onLocked: _closeFeatureSurfaces,
+diff --git a/dart_shell/lib/src/settings/settings_application.dart b/dart_shell/lib/src/settings/settings_application.dart
+index c13e73e..18f58e1 100644
+--- a/dart_shell/lib/src/settings/settings_application.dart
++++ b/dart_shell/lib/src/settings/settings_application.dart
+@@ -50,6 +50,17 @@ const denialSettingsApplicationId = 'dev.denial.settings';
+ bool isDenialSettingsApplicationId(String appId) =>
+     appId.trim().toLowerCase() == denialSettingsApplicationId;
+ 
++/// Local Flutter application id for a settings window hosted by the shell.
++///
++/// When a shell registers an application under this id, opening Settings from
++/// the shell shows that window instead of launching the packaged
++/// `denial-settings` binary. Hosting the settings UI in-process is what lets a
++/// shell extension contribute to the stock pages, and it is the only route
++/// that works without replacing the packaged bundle: that bundle's
++/// product-mode engine accepts only a release AOT snapshot, which the pinned
++/// SDK cannot produce.
++const inShellSettingsAppId = 'dev.denial.settings.in-shell';
++
+ @immutable
+ class SettingsPageOpenRequest {
+   const SettingsPageOpenRequest({required this.id, required this.page});
+@@ -90,6 +101,7 @@ class DenialSettingsApplication extends ConsumerStatefulWidget {
+     this.initialPage = SettingsPageId.appearance,
+     this.onOpenWallpaperSelector,
+     this.onPickCursorZip,
++    this.wallpaperSectionExtra,
+     super.key,
+   });
+ 
+@@ -97,6 +109,14 @@ class DenialSettingsApplication extends ConsumerStatefulWidget {
+   final Future<void> Function()? onOpenWallpaperSelector;
+   final Future<String?> Function()? onPickCursorZip;
+ 
++  /// Rendered inside the Appearance page's Wallpaper section.
++  ///
++  /// A shell extension point: a host that manages its own wallpaper backends
++  /// (for example Wallpaper Engine) can surface them in the stock wallpaper
++  /// entry instead of shipping a separate settings page. The standalone
++  /// Settings application never sets it.
++  final Widget? wallpaperSectionExtra;
++
+   @override
+   ConsumerState<DenialSettingsApplication> createState() =>
+       _DenialSettingsApplicationState();
+@@ -204,6 +224,8 @@ class _DenialSettingsApplicationState
+                               onOpenWallpaperSelector: () =>
+                                   unawaited(_openWallpaperSelector()),
+                               onPickCursorZip: widget.onPickCursorZip,
++                              wallpaperSectionExtra:
++                                  widget.wallpaperSectionExtra,
+                             ),
+                           ),
+                         ),
+@@ -299,6 +321,7 @@ class _SettingsPageBody extends ConsumerWidget {
+     required this.onOpenAccentPicker,
+     required this.onOpenWallpaperSelector,
+     required this.onPickCursorZip,
++    this.wallpaperSectionExtra,
+   });
+ 
+   final SettingsPageId page;
+@@ -306,6 +329,9 @@ class _SettingsPageBody extends ConsumerWidget {
+   final VoidCallback onOpenWallpaperSelector;
+   final Future<String?> Function()? onPickCursorZip;
+ 
++  /// Forwarded to the Appearance page's Wallpaper section.
++  final Widget? wallpaperSectionExtra;
++
+   @override
+   Widget build(BuildContext context, WidgetRef ref) {
+     final controller = ref.read(shellSettingsProvider.notifier);
+@@ -379,6 +405,7 @@ class _SettingsPageBody extends ConsumerWidget {
+             await ref.read(cursorThemeCatalogProvider.notifier).remove(theme);
+           },
+           onReset: controller.resetAppearance,
++          wallpaperSectionExtra: wallpaperSectionExtra,
+         );
+       case SettingsPageId.language:
+         final settings = ref.watch(
+diff --git a/dart_shell/lib/src/settings/widgets/settings_appearance_page.dart b/dart_shell/lib/src/settings/widgets/settings_appearance_page.dart
+index 871f20c..6f8a219 100644
+--- a/dart_shell/lib/src/settings/widgets/settings_appearance_page.dart
++++ b/dart_shell/lib/src/settings/widgets/settings_appearance_page.dart
+@@ -78,9 +78,17 @@ class SettingsAppearancePage extends StatelessWidget {
+     required this.onImportCursorZip,
+     required this.onRemoveCursorTheme,
+     required this.onReset,
++    this.wallpaperSectionExtra,
+     super.key,
+   });
+ 
++  /// Rendered inside the Wallpaper section, after its description.
++  ///
++  /// Lets a shell extension contribute extra wallpaper controls to the stock
++  /// Appearance page without forking this widget. Denial itself never passes
++  /// one.
++  final Widget? wallpaperSectionExtra;
++
+   final ShellAppearanceSettings settings;
+   final Color extractedAccent;
+   final WallpaperResource wallpaper;
+@@ -175,13 +183,22 @@ class SettingsAppearancePage extends StatelessWidget {
+                 label: l10n.settingsWallpaperChoose,
+                 onPressed: onOpenWallpaperSelector,
+               ),
+-              child: Text(
+-                l10n.settingsWallpaperDescription,
+-                style: ShellText.base.copyWith(
+-                  color: ShellTheme.colorsOf(context).textSecondary,
+-                  fontSize: 11,
+-                  height: 1.4,
+-                ),
++              child: Column(
++                crossAxisAlignment: CrossAxisAlignment.stretch,
++                children: [
++                  Text(
++                    l10n.settingsWallpaperDescription,
++                    style: ShellText.base.copyWith(
++                      color: ShellTheme.colorsOf(context).textSecondary,
++                      fontSize: 11,
++                      height: 1.4,
++                    ),
++                  ),
++                  if (wallpaperSectionExtra case final extra?) ...[
++                    const SizedBox(height: 14),
++                    extra,
++                  ],
++                ],
+               ),
+             ),
+             SettingsSection(

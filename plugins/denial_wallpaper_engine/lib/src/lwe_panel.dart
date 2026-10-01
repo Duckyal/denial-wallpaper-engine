@@ -1,0 +1,978 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'lwe_controller.dart';
+import 'workshop_discovery.dart';
+
+export 'lwe_panel_bus.dart' show LwePanelBus, LwePanelEvent;
+
+/// Panel strings, Chinese when the system locale is Chinese, English
+/// otherwise. Read from the platform dispatcher directly so it works
+/// regardless of the shell's MaterialApp localization setup.
+class _T {
+  static bool get isZh => WidgetsBinding
+      .instance
+      .platformDispatcher
+      .locale
+      .languageCode
+      .startsWith('zh');
+
+  static const String title = 'linux-wallpaperengine for Denial';
+
+  static String get close => isZh ? '关闭' : 'Close';
+  static String get configFailed =>
+      isZh ? '配置读取失败：' : 'Failed to read config: ';
+  static String get workshopFailed =>
+      isZh ? '读取 Workshop 壁纸失败：' : 'Failed to read Workshop wallpapers: ';
+  static String get noWallpapers => isZh
+      ? '未找到 Workshop 壁纸。\n请先在 Steam 的 Wallpaper Engine 创意工坊订阅并下载。'
+      : 'No Workshop wallpapers found.\nSubscribe and download them in the '
+            'Steam Wallpaper Engine Workshop first.';
+  static String get installed => isZh ? '已安装壁纸' : 'Installed wallpapers';
+  static String get gridHint => isZh
+      ? '单击选择壁纸 · 循环图标加入轮换 · 应用参数后生效'
+      : 'Click to select · loop icon adds to rotation · Apply to take effect';
+  static String get enable => isZh ? '启用动态壁纸' : 'Enable live wallpaper';
+  static String get stop =>
+      isZh ? '停止渲染（保留选择）' : 'Stop rendering (keep selection)';
+  static String get fpsCap => isZh ? '帧率上限' : 'Frame rate cap';
+  static String get mute =>
+      isZh ? '静音（停用音频分析）' : 'Mute (disable audio analysis)';
+  static String get volume => isZh ? '音量' : 'Volume';
+  static String get scaling => isZh ? '缩放模式' : 'Scaling mode';
+  static String get pauseFullscreen => isZh ? '全屏时暂停' : 'Pause on fullscreen';
+  static String get pauseFocused =>
+      isZh ? '只在焦点全屏时暂停' : 'Pause only on focused fullscreen';
+  static String get disableMouse =>
+      isZh ? '禁用鼠标交互' : 'Disable mouse interaction';
+  static String get disableParticles => isZh ? '禁用粒子' : 'Disable particles';
+  static String get disableParallax => isZh ? '禁用视差' : 'Disable parallax';
+  static String get audioOff => isZh ? '停用音频处理' : 'Disable audio processing';
+  static String get autoDuck => isZh
+      ? '别的应用放声时自动压低壁纸音量'
+      : 'Auto-duck wallpaper volume when apps play audio';
+  static String get draftHint => isZh
+      ? '所有调整先保存在草稿里，点"应用参数"后一次性生效。'
+      : 'Edits stay in a draft until you press "Apply".';
+  static String get rotation => isZh ? '轮换间隔' : 'Rotation interval';
+  static String get off => isZh ? '关闭' : 'Off';
+  static String minutes(int n) => isZh ? '$n 分钟' : '$n min';
+  static String get random => isZh ? '随机切换' : 'Random';
+  static String get apply => isZh ? '应用参数' : 'Apply';
+  static String get applyFailed => isZh ? '应用失败：' : 'Failed to apply: ';
+  static String get appliedClosing =>
+      isZh ? '配置已应用，正在返回桌面…' : 'Applied — returning to desktop…';
+}
+
+/// Full-screen wallpaper manager overlay mounted on the aboveWindows layer.
+///
+/// Interaction model (draft-based): clicking a tile only SELECTS it and
+/// every control edits a local draft; nothing is persisted or restarted
+/// until the "Apply" button commits the whole draft at once. The enable
+/// toggle and stop button remain immediate actions.
+class LweWallpaperPanel extends ConsumerStatefulWidget {
+  const LweWallpaperPanel({required this.onClose, super.key});
+
+  final VoidCallback onClose;
+
+  @override
+  ConsumerState<LweWallpaperPanel> createState() => _LweWallpaperPanelState();
+}
+
+class _LweWallpaperPanelState extends ConsumerState<LweWallpaperPanel> {
+  bool _busy = false;
+  LweState? _draft;
+  String? _toast;
+  Timer? _toastTimer;
+
+  LweState get draft => _draft!;
+
+  LweState? _loadedState;
+
+  @override
+  void dispose() {
+    _toastTimer?.cancel();
+    super.dispose();
+  }
+
+  void _showToast(String text) {
+    _toastTimer?.cancel();
+    setState(() => _toast = text);
+    _toastTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _toast = null);
+    });
+  }
+
+  void _updateDraft(LweState Function(LweState) mutate) {
+    setState(() => _draft = mutate(_draft ?? _loadedState!));
+  }
+
+  Future<void> _run(Future<void> Function() task) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await task();
+      // Immediate actions (enable/stop) change controller state behind the
+      // draft's back; fold their `enabled` result back in so the toggle
+      // reflects reality, while keeping uncommitted draft edits.
+      final latest = ref.read(lweControllerProvider).value;
+      if (latest != null && mounted) {
+        setState(() => _draft = _draft?.copyWith(enabled: latest.enabled));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Commits the whole draft via [LweController.commitPanel]. On success the
+  /// panel closes shortly after a toast, so the user immediately SEES the
+  /// wallpaper change the panel was blocking. Failures stay with an error
+  /// toast so the draft can be fixed.
+  Future<void> _applyDraft() async {
+    final d = draft;
+    try {
+      await _run(
+        () => ref
+            .read(lweControllerProvider.notifier)
+            .commitPanel(
+              wallpaperId: d.currentWallpaperId,
+              playlist: d.playlist,
+              settings: d.settings,
+              rotationMinutes: d.rotationMinutes,
+            ),
+      );
+      if (!mounted) return;
+      setState(() => _draft = null);
+      _showToast(_T.appliedClosing);
+      Future.delayed(const Duration(milliseconds: 900), () {
+        if (mounted) widget.onClose();
+      });
+    } on Object catch (error) {
+      if (mounted) _showToast('${_T.applyFailed}$error');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(lweControllerProvider);
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Theme(
+        data: ThemeData(
+          brightness: Brightness.dark,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF7C9EFF),
+            brightness: Brightness.dark,
+          ),
+          useMaterial3: true,
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          // Builder: _buildPanel must resolve Theme.of BELOW the dark Theme
+          // above — the State's own context sits outside it and would pick
+          // up the shell's (possibly light) scheme, rendering dark-on-dark.
+          child: Builder(
+            builder: (context) => state.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => _PanelScaffold(
+                onClose: widget.onClose,
+                child: Center(child: Text('${_T.configFailed}$error')),
+              ),
+              data: (state) {
+                _loadedState = state;
+                _draft ??= state;
+                return _buildPanel(context, ref);
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPanel(BuildContext context, WidgetRef ref) {
+    final state = draft;
+    final settings = state.settings;
+    final controller = ref.read(lweControllerProvider.notifier);
+    final scheme = Theme.of(context).colorScheme;
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        _PanelScaffold(
+          onClose: widget.onClose,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 14, 12, 14),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _T.title,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: scheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: _T.close,
+                      onPressed: widget.onClose,
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+              ),
+              Divider(
+                height: 1,
+                color: scheme.outlineVariant.withValues(alpha: .4),
+              ),
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      flex: 7,
+                      child: _WallpaperGrid(
+                        playlist: state.playlist,
+                        activeId: state.currentWallpaperId,
+                        selectedId: draft.currentWallpaperId,
+                        enabled: state.enabled && !_busy,
+                        onSelect: (id) => _updateDraft(
+                          (d) => d.copyWith(currentWallpaperId: id),
+                        ),
+                        onTogglePlaylist: (id) => _updateDraft((d) {
+                          final playlist = [...d.playlist];
+                          if (!playlist.remove(id)) playlist.add(id);
+                          return d.copyWith(playlist: playlist);
+                        }),
+                      ),
+                    ),
+                    VerticalDivider(
+                      width: 1,
+                      color: scheme.outlineVariant.withValues(alpha: .4),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _SwitchRow(
+                              label: _T.enable,
+                              value: state.enabled,
+                              onChanged: (v) =>
+                                  _run(() => controller.setEnabled(v)),
+                            ),
+                            if (state.enabled &&
+                                state.currentWallpaperId != null)
+                              _OutlinedAction(
+                                label: _T.stop,
+                                icon: Icons.stop_rounded,
+                                onTap: _busy
+                                    ? null
+                                    : () => _run(controller.stopWallpaper),
+                              ),
+                            const SizedBox(height: 16),
+                            _SliderRow(
+                              label: _T.fpsCap,
+                              valueLabel: '${settings.fps} FPS',
+                              value: settings.fps.toDouble(),
+                              min: 5,
+                              max: 120,
+                              divisions: 23,
+                              onChanged: (v) => _updateDraft(
+                                (d) => d.copyWith(
+                                  settings: d.settings.copyWith(fps: v.round()),
+                                ),
+                              ),
+                            ),
+                            _SwitchRow(
+                              label: _T.mute,
+                              value: settings.silent,
+                              onChanged: (v) => _updateDraft(
+                                (d) => d.copyWith(
+                                  settings: d.settings.copyWith(silent: v),
+                                ),
+                              ),
+                            ),
+                            if (!settings.silent)
+                              _SliderRow(
+                                label: _T.volume,
+                                valueLabel: '${settings.volume}',
+                                value: settings.volume.toDouble(),
+                                min: 0,
+                                max: 128,
+                                divisions: 32,
+                                onChanged: (v) => _updateDraft(
+                                  (d) => d.copyWith(
+                                    settings: d.settings.copyWith(
+                                      volume: v.round(),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            _ChoiceRow(
+                              label: _T.scaling,
+                              value: settings.scaling,
+                              options: const [
+                                'default',
+                                'fit',
+                                'fill',
+                                'stretch',
+                              ],
+                              onSelected: (v) => _updateDraft(
+                                (d) => d.copyWith(
+                                  settings: d.settings.copyWith(scaling: v),
+                                ),
+                              ),
+                            ),
+                            _SwitchRow(
+                              label: _T.pauseFullscreen,
+                              value: settings.fullscreenPause,
+                              onChanged: (v) => _updateDraft(
+                                (d) => d.copyWith(
+                                  settings: d.settings.copyWith(
+                                    fullscreenPause: v,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            _SwitchRow(
+                              label: _T.pauseFocused,
+                              value: settings.fullscreenPauseOnlyActive,
+                              onChanged: (v) => _updateDraft(
+                                (d) => d.copyWith(
+                                  settings: d.settings.copyWith(
+                                    fullscreenPauseOnlyActive: v,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            _SwitchRow(
+                              label: _T.disableMouse,
+                              value: settings.disableMouse,
+                              onChanged: (v) => _updateDraft(
+                                (d) => d.copyWith(
+                                  settings: d.settings.copyWith(
+                                    disableMouse: v,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            _SwitchRow(
+                              label: _T.disableParticles,
+                              value: settings.disableParticles,
+                              onChanged: (v) => _updateDraft(
+                                (d) => d.copyWith(
+                                  settings: d.settings.copyWith(
+                                    disableParticles: v,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            _SwitchRow(
+                              label: _T.disableParallax,
+                              value: settings.disableParallax,
+                              onChanged: (v) => _updateDraft(
+                                (d) => d.copyWith(
+                                  settings: d.settings.copyWith(
+                                    disableParallax: v,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            _SwitchRow(
+                              label: _T.audioOff,
+                              value: !settings.audioProcessing,
+                              onChanged: (v) => _updateDraft(
+                                (d) => d.copyWith(
+                                  settings: d.settings.copyWith(
+                                    audioProcessing: !v,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            _SwitchRow(
+                              label: _T.autoDuck,
+                              value: settings.automute,
+                              onChanged: (v) => _updateDraft(
+                                (d) => d.copyWith(
+                                  settings: d.settings.copyWith(automute: v),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              _T.rotation,
+                              style: const TextStyle(fontSize: 12.5),
+                            ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: SizedBox(
+                                    height: 30,
+                                    child: SliderTheme(
+                                      data: SliderTheme.of(context).copyWith(
+                                        overlayShape:
+                                            SliderComponentShape.noOverlay,
+                                      ),
+                                      child: Slider(
+                                        value: state.rotationMinutes
+                                            .clamp(0, 120)
+                                            .toDouble(),
+                                        min: 0,
+                                        max: 120,
+                                        divisions: 24,
+                                        onChanged: (value) => _updateDraft(
+                                          (d) => d.copyWith(
+                                            rotationMinutes: value.round(),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: 76,
+                                  child: Text(
+                                    state.rotationMinutes <= 0
+                                        ? _T.off
+                                        : _T.minutes(state.rotationMinutes),
+                                    textAlign: TextAlign.end,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: scheme.primary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            FilledButton.tonalIcon(
+                              onPressed: _busy
+                                  ? null
+                                  : () async {
+                                      await _run(controller.applyRandom);
+                                      // Random picks a new wallpaper immediately;
+                                      // adopt it into the draft so a later "Apply"
+                                      // doesn't revert to the stale pick.
+                                      final latest = ref
+                                          .read(lweControllerProvider)
+                                          .value;
+                                      if (latest != null && mounted) {
+                                        setState(
+                                          () => _draft = _draft?.copyWith(
+                                            enabled: latest.enabled,
+                                            currentWallpaperId:
+                                                latest.currentWallpaperId,
+                                          ),
+                                        );
+                                      }
+                                    },
+                              icon: const Icon(Icons.shuffle_rounded, size: 18),
+                              label: Text(_T.random),
+                            ),
+                            const SizedBox(height: 10),
+                            FilledButton.icon(
+                              onPressed: _busy ? null : _applyDraft,
+                              icon: const Icon(Icons.check_rounded, size: 18),
+                              label: Text(_T.apply),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              _T.draftHint,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (_toast != null)
+          Positioned(
+            top: 20,
+            left: 0,
+            right: 0,
+            child: IgnorePointer(
+              child: Center(
+                child: AnimatedOpacity(
+                  opacity: _toast == null ? 0 : 1,
+                  duration: const Duration(milliseconds: 200),
+                  child: _Toast(text: _toast!),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Full-bleed panel frame: fills the entire output edge-to-edge. The
+/// background is ~90% opaque so a hint of the live wallpaper shows through.
+class _PanelScaffold extends StatelessWidget {
+  const _PanelScaffold({required this.child, required this.onClose});
+
+  final Widget child;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(color: const Color(0xE614181D), child: child);
+  }
+}
+
+/// Floating capsule toast at the top of the panel.
+class _Toast extends StatelessWidget {
+  const _Toast({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xF01A1E24),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0x33FFFFFF)),
+        boxShadow: const [BoxShadow(color: Color(0x66000000), blurRadius: 16)],
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          color: Color(0xFFE8EAF0),
+        ),
+      ),
+    );
+  }
+}
+
+class _WallpaperGrid extends ConsumerWidget {
+  const _WallpaperGrid({
+    required this.playlist,
+    required this.activeId,
+    required this.selectedId,
+    required this.enabled,
+    required this.onSelect,
+    required this.onTogglePlaylist,
+  });
+
+  final List<String> playlist;
+  final String? activeId;
+  final String? selectedId;
+  final bool enabled;
+  final ValueChanged<String> onSelect;
+  final ValueChanged<String> onTogglePlaylist;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final wallpapers = ref.watch(lweWallpapersProvider);
+    final scheme = Theme.of(context).colorScheme;
+    return wallpapers.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Text('${_T.workshopFailed}$error'),
+      ),
+      data: (items) {
+        if (items.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.all(24),
+            child: Center(
+              child: Text(
+                _T.noWallpapers,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: scheme.onSurfaceVariant),
+              ),
+            ),
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Row(
+                children: [
+                  Text(
+                    '${_T.installed}（${items.length}）',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _T.gridHint,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: GridView.builder(
+                padding: const EdgeInsets.all(16),
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 210,
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 16 / 10,
+                ),
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  return _Tile(
+                    item: item,
+                    selected: item.id == selectedId,
+                    running: item.id == activeId,
+                    inPlaylist: playlist.contains(item.id),
+                    enabled: enabled,
+                    onSelect: () => onSelect(item.id),
+                    onTogglePlaylist: () => onTogglePlaylist(item.id),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _Tile extends StatelessWidget {
+  const _Tile({
+    required this.item,
+    required this.selected,
+    required this.running,
+    required this.inPlaylist,
+    required this.enabled,
+    required this.onSelect,
+    required this.onTogglePlaylist,
+  });
+
+  final WorkshopWallpaper item;
+  final bool selected;
+  final bool running;
+  final bool inPlaylist;
+  final bool enabled;
+  final VoidCallback onSelect;
+  final VoidCallback onTogglePlaylist;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final radius = BorderRadius.circular(12);
+    return Opacity(
+      opacity: enabled ? 1 : .5,
+      child: InkWell(
+        borderRadius: radius,
+        onTap: enabled ? onSelect : null,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: radius,
+            border: Border.all(
+              color: selected
+                  ? scheme.primary
+                  : running
+                  ? scheme.primary.withValues(alpha: .55)
+                  : scheme.outlineVariant,
+              width: selected ? 2 : 1,
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: radius,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (item.preview != null)
+                  Image.file(
+                    File(item.preview!),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) =>
+                        ColoredBox(color: scheme.surfaceContainerHighest),
+                  )
+                else
+                  ColoredBox(color: scheme.surfaceContainerHighest),
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: _PlaylistToggle(
+                    active: inPlaylist,
+                    enabled: enabled,
+                    onTap: onTogglePlaylist,
+                  ),
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0),
+                          Colors.black.withValues(alpha: .78),
+                        ],
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 14, 8, 6),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                          ),
+                          if (running)
+                            Icon(
+                              Icons.check_circle_rounded,
+                              size: 14,
+                              color: scheme.primary,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Small circular loop toggle in the tile corner; edits the draft playlist
+/// only. Tapping it must not also select the tile.
+class _PlaylistToggle extends StatelessWidget {
+  const _PlaylistToggle({
+    required this.active,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final bool active;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: active ? scheme.primary : Colors.black.withValues(alpha: .45),
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: enabled ? onTap : null,
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Icon(
+            Icons.loop_rounded,
+            size: 14,
+            color: active
+                ? scheme.onPrimary
+                : Colors.white.withValues(alpha: .85),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SwitchRow extends StatelessWidget {
+  const _SwitchRow({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Expanded(child: Text(label, style: const TextStyle(fontSize: 12.5))),
+          SizedBox(
+            height: 32,
+            child: Switch(
+              value: value,
+              onChanged: onChanged,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SliderRow extends StatelessWidget {
+  const _SliderRow({
+    required this.label,
+    required this.valueLabel,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.divisions,
+    required this.onChanged,
+  });
+
+  final String label;
+  final String valueLabel;
+  final double value;
+  final double min;
+  final double max;
+  final int divisions;
+  final ValueChanged<double> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(label, style: const TextStyle(fontSize: 12.5)),
+              ),
+              Text(
+                valueLabel,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(
+            height: 30,
+            child: SliderTheme(
+              data: SliderTheme.of(context)
+                  .copyWith(overlayShape: SliderComponentShape.noOverlay),
+              child: Slider(
+                value: value.clamp(min, max),
+                min: min,
+                max: max,
+                divisions: divisions,
+                onChanged: onChanged,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChoiceRow extends StatelessWidget {
+  const _ChoiceRow({
+    required this.label,
+    required this.value,
+    required this.options,
+    required this.onSelected,
+  });
+
+  final String label;
+  final String value;
+  final List<String> options;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 12.5)),
+          const SizedBox(height: 6),
+          SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<String>(
+              showSelectedIcon: false,
+              style: const ButtonStyle(
+                visualDensity: VisualDensity(horizontal: -4, vertical: -3),
+                textStyle: WidgetStatePropertyAll(TextStyle(fontSize: 11)),
+              ),
+              segments: [
+                for (final option in options)
+                  ButtonSegment(value: option, label: Text(option)),
+              ],
+              selected: {value},
+              onSelectionChanged: (selection) => onSelected(selection.first),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OutlinedAction extends StatelessWidget {
+  const _OutlinedAction({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: OutlinedButton.icon(
+        onPressed: onTap,
+        icon: Icon(icon, size: 16),
+        label: Text(label, style: const TextStyle(fontSize: 12)),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: scheme.onSurfaceVariant,
+          side: BorderSide(color: scheme.outlineVariant),
+        ),
+      ),
+    );
+  }
+}

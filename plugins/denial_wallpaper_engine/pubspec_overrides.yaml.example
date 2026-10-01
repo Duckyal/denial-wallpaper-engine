@@ -1,0 +1,13 @@
+# Copy this file to pubspec_overrides.yaml and replace the paths with your
+# local Denial SDK paths. This file is ignored by Git.
+#
+# To get the paths, run:
+#   denial-plugins prepare
+#   DENIAL_PLUGIN_STATE="${XDG_STATE_HOME:-$HOME/.local/state}/denial/plugins"
+#   jq -er '.runtime' "$DENIAL_PLUGIN_STATE/configuration.json"
+
+dependency_overrides:
+  denial_sdk:
+    path: /ABSOLUTE/RUNTIME/packages/denial_sdk
+  denial_flutter_sdk:
+    path: /ABSOLUTE/RUNTIME/packages/denial_flutter_sdk

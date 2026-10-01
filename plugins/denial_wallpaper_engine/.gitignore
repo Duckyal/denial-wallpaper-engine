@@ -1,0 +1,5 @@
+.dart_tool/
+build/
+.flutter-plugins*
+pubspec_overrides.yaml
+.vscode/settings.json

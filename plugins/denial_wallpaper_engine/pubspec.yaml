@@ -1,0 +1,33 @@
+name: denial_wallpaper_engine
+description: Wallpaper Engine integration plugin for Denial. Drives linux-wallpaperengine as a live desktop background.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.13.0
+  flutter: 3.47.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  denial_sdk: any
+  denial_flutter_sdk: any
+  flutter_riverpod: ^3.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+denial_plugin:
+  schema: 1
+  name: Wallpaper Engine
+  provides:
+    - contract: package:denial_flutter_sdk/surfaces.dart#ShellSurface
+      count: 2
+    - contract: package:denial_flutter_sdk/actions.dart#ShellAction
+      count: 2
+dependency_overrides: {
+  denial_wallpaper: {
+    path: plugins/denial_wallpaper_engine
+  }
+}

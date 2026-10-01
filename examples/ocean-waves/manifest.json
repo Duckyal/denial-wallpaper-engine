@@ -1,0 +1,7 @@
+{
+  "id": "ocean-waves",
+  "name": "Ocean Waves",
+  "type": "web",
+  "entry": "index.html",
+  "options": { "loop": true, "mute": true, "volume": 0.0 }
+}
