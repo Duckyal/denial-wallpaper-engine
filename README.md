@@ -70,6 +70,13 @@ denial-wallpaper-engine/
 
 ## 三、安装
 
+### 通过 Denial 的 Plugins 应用安装：
+
+- 运行 Plugins 应用
+- 应用右上角点击“添加插件/Add Plugins”按钮
+- 复制粘贴本项目链接
+- 点击“搜索插件/Find plugins”按钮
+
 ### 通过 denial-plugins CLI
 
 ```sh
