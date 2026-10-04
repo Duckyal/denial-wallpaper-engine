@@ -186,10 +186,15 @@ class _LwePanelHostState extends ConsumerState<_LwePanelHost> {
   StreamSubscription<FileSystemEvent>? _triggerSubscription;
   bool _visible = false;
 
-  /// The shell's own "close window" bindings ("Meta+q" …). The panel is a
-  /// surface, not a window, so the compositor has nothing to close — it has
-  /// to honour those keys itself or it feels stuck on screen.
+  /// The shell's own "close window" bindings ("Super+Q" …). The panel is a
+  /// surface, not a window, so the compositor has nothing to close — those
+  /// keys are also swallowed as global shortcuts before Flutter ever sees
+  /// them, so the panel borrows the binding while it is open.
   List<String> _closeShortcuts = const [];
+
+  /// What the borrowed keys pointed at before we took them, so they can be
+  /// handed back verbatim on close.
+  List<DenialShortcutBinding> _borrowedBindings = const [];
 
   @override
   void initState() {
@@ -197,7 +202,11 @@ class _LwePanelHostState extends ConsumerState<_LwePanelHost> {
     lweLog('panel host mounted');
     _subscription = LwePanelBus.instance.events.listen(_onEvent);
     _listenPanelTrigger();
+    // A crash mid-panel would leave the keys pointed at us; give them back.
+    unawaited(_repairBorrowedShortcuts());
   }
+
+  static const _closePanelActionId = 'denial_wallpaper_engine.closePanel';
 
   Future<void> _loadCloseShortcuts() async {
     try {
@@ -207,15 +216,111 @@ class _LwePanelHostState extends ConsumerState<_LwePanelHost> {
       setState(() {
         _closeShortcuts = [
           for (final binding in config.shortcuts)
-            if (binding.target is DenialShortcutActionTarget &&
-                (binding.target as DenialShortcutActionTarget).action ==
-                    DenialShortcutAction.closeWindow)
-              binding.shortcut,
+            if (_isCloseWindow(binding)) binding.shortcut,
         ];
       });
       lweLog('close-window shortcuts: $_closeShortcuts');
     } on Object catch (error) {
       lweLog('close shortcut lookup failed: $error');
+    }
+  }
+
+  static bool _isCloseWindow(DenialShortcutBinding binding) {
+    final target = binding.target;
+    return target is DenialShortcutActionTarget &&
+        target.action == DenialShortcutAction.closeWindow;
+  }
+
+  static bool _isBorrowed(DenialShortcutBinding binding) {
+    final target = binding.target;
+    return target is DenialShortcutPluginActionTarget &&
+        target.id == _closePanelActionId;
+  }
+
+  /// Points every "close window" key at [LweClosePanelAction] for as long as
+  /// the panel is open. The compositor consumes global shortcuts before the
+  /// Flutter tree sees them, so borrowing the binding is the only way the
+  /// user's own close key can dismiss the panel.
+  Future<void> _borrowCloseShortcuts() async {
+    try {
+      final bridge = ref.read(denialBridgeProvider);
+      var config = await bridge.readShortcutConfiguration();
+      final borrowed = <DenialShortcutBinding>[];
+      for (final binding in config.shortcuts) {
+        if (!_isCloseWindow(binding)) continue;
+        config = await bridge.removeShortcut(
+          expectedRevision: config.revision,
+          shortcut: binding.shortcut,
+        );
+        config = await bridge.addShortcut(
+          expectedRevision: config.revision,
+          shortcut: DenialShortcutBinding(
+            shortcut: binding.shortcut,
+            target: const DenialShortcutPluginActionTarget(
+              _closePanelActionId,
+            ),
+          ),
+        );
+        borrowed.add(binding);
+      }
+      _borrowedBindings = borrowed;
+      lweLog('borrowed ${borrowed.length} close-window shortcut(s)');
+    } on Object catch (error) {
+      lweLog('borrowing close shortcut failed: $error');
+    }
+  }
+
+  /// Hands the borrowed keys back to the shell's close-window action.
+  Future<void> _returnCloseShortcuts() async {
+    final borrowed = _borrowedBindings;
+    _borrowedBindings = const [];
+    if (borrowed.isEmpty) return;
+    try {
+      final bridge = ref.read(denialBridgeProvider);
+      var config = await bridge.readShortcutConfiguration();
+      for (final binding in borrowed) {
+        config = await bridge.removeShortcut(
+          expectedRevision: config.revision,
+          shortcut: binding.shortcut,
+        );
+        config = await bridge.addShortcut(
+          expectedRevision: config.revision,
+          shortcut: binding,
+        );
+      }
+      lweLog('returned ${borrowed.length} close-window shortcut(s)');
+    } on Object catch (error) {
+      lweLog('returning close shortcut failed: $error');
+    }
+  }
+
+  /// Startup sweep: any key still pointing at the panel's close action (from
+  /// a session that ended mid-panel) goes back to close-window.
+  Future<void> _repairBorrowedShortcuts() async {
+    try {
+      final bridge = ref.read(denialBridgeProvider);
+      var config = await bridge.readShortcutConfiguration();
+      var repaired = 0;
+      for (final binding in config.shortcuts) {
+        if (!_isBorrowed(binding)) continue;
+        config = await bridge.removeShortcut(
+          expectedRevision: config.revision,
+          shortcut: binding.shortcut,
+        );
+        config = await bridge.addShortcut(
+          expectedRevision: config.revision,
+          shortcut: DenialShortcutBinding(
+            shortcut: binding.shortcut,
+            target: const DenialShortcutActionTarget(
+              DenialShortcutAction.closeWindow,
+            ),
+          ),
+        );
+        repaired++;
+      }
+      if (repaired > 0) lweLog('repaired $repaired borrowed shortcut(s)');
+    } on Object catch (error) {
+      lweLog('shortcut repair failed: $error');
     }
   }
 
@@ -269,21 +374,29 @@ class _LwePanelHostState extends ConsumerState<_LwePanelHost> {
     switch (event) {
       case LwePanelEvent.toggle:
         if (_visible) {
-          setState(() => _visible = false);
+          await _hidePanel();
         } else {
           _showPanel();
         }
       case LwePanelEvent.close:
-        if (_visible) setState(() => _visible = false);
+        if (_visible) await _hidePanel();
       case LwePanelEvent.random:
         await ref.read(lweControllerProvider.notifier).applyRandom();
     }
+  }
+
+  /// Single exit path: hides the panel and always gives the borrowed keys
+  /// back, whichever way the panel was dismissed.
+  Future<void> _hidePanel() async {
+    if (mounted) setState(() => _visible = false);
+    await _returnCloseShortcuts();
   }
 
   void _showPanel() {
     setState(() => _visible = true);
     // Re-read on every open: the binding may have changed in settings.
     unawaited(_loadCloseShortcuts());
+    unawaited(_borrowCloseShortcuts());
     // The enable toggle shows the ENGINE's real state, not just the config's
     // claim; query once per open so a drifted flag (crash, external engine
     // start, an older boot) reconciles before the user reads it.
@@ -294,6 +407,8 @@ class _LwePanelHostState extends ConsumerState<_LwePanelHost> {
   void dispose() {
     _subscription?.cancel();
     _triggerSubscription?.cancel();
+    // Best effort: the startup sweep covers the case this doesn't finish.
+    unawaited(_returnCloseShortcuts());
     super.dispose();
   }
 
@@ -313,15 +428,11 @@ class _LwePanelHostState extends ConsumerState<_LwePanelHost> {
         autofocus: _visible,
         onKeyEvent: (node, event) {
           if (event is KeyDownEvent) {
-            if (event.logicalKey == LogicalKeyboardKey.escape) {
-              setState(() => _visible = false);
+            if (event.logicalKey == LogicalKeyboardKey.escape ||
+                _closeShortcuts
+                    .any((shortcut) => _matchesShortcut(shortcut, event))) {
+              unawaited(_hidePanel());
               return KeyEventResult.handled;
-            }
-            for (final shortcut in _closeShortcuts) {
-              if (_matchesShortcut(shortcut, event)) {
-                setState(() => _visible = false);
-                return KeyEventResult.handled;
-              }
             }
           }
           return KeyEventResult.ignored;
@@ -329,7 +440,7 @@ class _LwePanelHostState extends ConsumerState<_LwePanelHost> {
         child: !_visible
             ? const SizedBox.shrink()
             : LweWallpaperPanel(
-                onClose: () => setState(() => _visible = false),
+                onClose: _hidePanel,
               ),
       ),
     );
@@ -357,6 +468,30 @@ final class LweTogglePanelAction implements ShellAction {
   @override
   Future<void> invoke(ShellActionContext context) async {
     LwePanelBus.instance.togglePanel();
+  }
+}
+
+/// Closes the manager panel. Never bound permanently: the panel borrows the
+/// shell's "close window" key while it is open and hands it back on close.
+@Provides(ShellAction)
+final class LweClosePanelAction implements ShellAction {
+  const LweClosePanelAction();
+
+  @override
+  String get id => 'denial_wallpaper_engine.closePanel';
+
+  @override
+  String get provider => 'Wallpaper Engine';
+
+  @override
+  String label(BuildContext context) => 'Close Wallpaper Engine Panel';
+
+  @override
+  String description(BuildContext context) => '关闭动态壁纸管理面板';
+
+  @override
+  Future<void> invoke(ShellActionContext context) async {
+    LwePanelBus.instance.closePanel();
   }
 }
 
