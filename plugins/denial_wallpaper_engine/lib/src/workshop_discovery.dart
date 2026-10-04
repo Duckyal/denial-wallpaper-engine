@@ -7,18 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class WorkshopDiscovery {
   WorkshopDiscovery({this.customRoots = const []});
 
-  /// Extra workshop roots to scan first (user configured).
   final List<String> customRoots;
 
   static const workshopAppId = '431960';
 
-  /// Steam installation roots to probe, relative to $HOME.
-  ///
-  /// Covers the native install, the compatibility symlink Steam keeps, and the
-  /// Flatpak and Snap sandboxes, which are entirely separate trees: a machine
-  /// can have the native client and the Flatpak one side by side, each with its
-  /// own workshop downloads, and scanning only ~/.steam and ~/.local/share
-  /// silently misses whichever the user is not looking at.
   static const steamRootCandidates = <String>[
     '.local/share/Steam',
     '.steam/steam',
@@ -29,24 +21,28 @@ class WorkshopDiscovery {
     'snap/steam/common/.steam/steam',
   ];
 
-  /// Every workshop content directory to scan, in priority order.
-  ///
-  /// Resolves to *all* of them rather than the first that exists. Two
-  /// independent reasons, both of which used to be bugs here:
-  ///
-  ///  * A single machine can run several Steam clients (native plus Flatpak,
-  ///    or Snap), each with its own workshop library.
-  ///  * One client can have many libraries. `libraryfolders.vdf` lists them all,
-  ///    and games on a second drive is the normal case, so stopping at the
-  ///    first existing root hid every wallpaper the user had downloaded to it.
+  List<WorkshopWallpaper>? _cache;
+  DateTime? _cacheTime;
+  static const _cacheTtl = Duration(minutes: 5);
+
   Future<List<WorkshopWallpaper>> getWallpapers() async {
+    if (_cache != null &&
+        _cacheTime != null &&
+        DateTime.now().difference(_cacheTime!) < _cacheTtl) {
+      return _cache!;
+    }
+    final result = await _scan();
+    _cache = result;
+    _cacheTime = DateTime.now();
+    return result;
+  }
+
+  Future<List<WorkshopWallpaper>> _scan() async {
     final home = Platform.environment['HOME'] ?? '.';
     final roots = <String>[];
     final seen = <String>{};
 
     void add(String path) {
-      // ~/.steam/steam is normally a symlink into ~/.local/share/Steam, so the
-      // same tree arrives several times. Canonicalising collapses those.
       final key = _canonical(path);
       if (seen.add(key)) roots.add(path);
     }
@@ -59,7 +55,6 @@ class WorkshopDiscovery {
       final steamRoot = '$home/$candidate';
       if (!await Directory(steamRoot).exists()) continue;
 
-      // The install root is itself a library.
       add('$steamRoot/steamapps/workshop/content/$workshopAppId');
 
       for (final library in await _libraryFolders(steamRoot)) {
@@ -67,10 +62,12 @@ class WorkshopDiscovery {
       }
     }
 
-    final existing = <String>[];
-    for (final root in roots) {
-      if (await Directory(root).exists()) existing.add(root);
-    }
+    final existing = (await Future.wait(
+      roots.map((r) => Directory(r).exists().then((e) => (r, e))),
+    ))
+        .where((p) => p.$2)
+        .map((p) => p.$1)
+        .toList();
     return _scanWallpapers(existing);
   }
 
@@ -88,7 +85,6 @@ class WorkshopDiscovery {
     final libraries = <String>[];
     final installPath = _canonical(steamRoot);
 
-    // Current format: an explicit "path" key.
     for (final match in RegExp('"path"\\s+"([^"]*)"').allMatches(text)) {
       final path = match.group(1);
       if (path == null || path.isEmpty) continue;
@@ -98,7 +94,6 @@ class WorkshopDiscovery {
     }
 
     if (libraries.isEmpty) {
-      // Legacy format: "1"  "/mnt/games/SteamLibrary" with no "path" key.
       for (final match in RegExp('"\\d+"\\s+(?:"([^"]*)")').allMatches(text)) {
         final path = match.group(1);
         if (path == null || path.isEmpty) continue;
@@ -124,9 +119,13 @@ class WorkshopDiscovery {
     final seenIds = <String>{};
 
     for (final root in roots) {
-      await for (final entity in Directory(root).list(followLinks: false)) {
-        if (entity is! Directory) continue;
-        final wallpaper = await _inspect(entity);
+      final entities = Directory(root).list(followLinks: false);
+      final dirs = <Directory>[];
+      await for (final entity in entities) {
+        if (entity is Directory) dirs.add(entity);
+      }
+      final wallpapers = await Future.wait(dirs.map(_inspect));
+      for (final wallpaper in wallpapers) {
         if (wallpaper == null) continue;
         if (!seenIds.add(wallpaper.id)) continue;
         result.add(wallpaper);
@@ -175,11 +174,10 @@ class WorkshopDiscovery {
       }
     }
 
-    // Preview art for the picker; any of the three engine-default names.
     String? preview;
     for (final name in const ['preview.jpg', 'preview.png', 'preview.gif']) {
       final candidate = dir.path + '/' + name;
-      if (File(candidate).existsSync()) {
+      if (await File(candidate).exists()) {
         preview = candidate;
         break;
       }
@@ -195,12 +193,10 @@ class WorkshopDiscovery {
   }
 }
 
-/// Cached list of installed workshop wallpapers for picker UIs.
 final lweWallpapersProvider = FutureProvider<List<WorkshopWallpaper>>(
   (ref) => ref.watch(workshopDiscoveryProvider).getWallpapers(),
 );
 
-/// A discovered workshop wallpaper.
 class WorkshopWallpaper {
   const WorkshopWallpaper({
     required this.id,
@@ -215,7 +211,6 @@ class WorkshopWallpaper {
   final String type;
   final String path;
 
-  /// Absolute path of preview.jpg/png/gif, or null when the item ships none.
   final String? preview;
 }
 

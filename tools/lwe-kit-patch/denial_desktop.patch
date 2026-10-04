@@ -1,0 +1,1817 @@
+diff -ruN denial_desktop/.dart_tool/package_config.json /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/plugins/denial_desktop/.dart_tool/package_config.json
+--- denial_desktop/.dart_tool/package_config.json	1970-01-01 08:00:00.000000000 +0800
++++ /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/plugins/denial_desktop/.dart_tool/package_config.json	2026-10-01 17:51:19.946939842 +0800
+@@ -0,0 +1,526 @@
++{
++  "configVersion": 2,
++  "packages": [
++    {
++      "name": "_fe_analyzer_shared",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/_fe_analyzer_shared-103.0.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.11"
++    },
++    {
++      "name": "analyzer",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/analyzer-13.3.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.11"
++    },
++    {
++      "name": "archive",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/archive-3.6.1",
++      "packageUri": "lib/",
++      "languageVersion": "3.0"
++    },
++    {
++      "name": "args",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/args-2.7.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.3"
++    },
++    {
++      "name": "async",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/async-2.13.1",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "boolean_selector",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/boolean_selector-2.1.2",
++      "packageUri": "lib/",
++      "languageVersion": "3.1"
++    },
++    {
++      "name": "characters",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/characters-1.4.1",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "cli_config",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/cli_config-0.2.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.0"
++    },
++    {
++      "name": "clock",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/clock-1.1.3",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "collection",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/collection-1.19.1",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "convert",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/convert-3.1.2",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "coverage",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/coverage-1.15.1",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "crypto",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/crypto-3.0.7",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "dbus",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/dbus-0.7.15",
++      "packageUri": "lib/",
++      "languageVersion": "2.17"
++    },
++    {
++      "name": "denial_clock_ui",
++      "rootUri": "../../denial_clock/ui",
++      "packageUri": "lib/",
++      "languageVersion": "3.13"
++    },
++    {
++      "name": "denial_flutter_sdk",
++      "rootUri": "../../../packages/denial_flutter_sdk",
++      "packageUri": "lib/",
++      "languageVersion": "3.13"
++    },
++    {
++      "name": "denial_sdk",
++      "rootUri": "../../../packages/denial_sdk",
++      "packageUri": "lib/",
++      "languageVersion": "3.13"
++    },
++    {
++      "name": "denial_wallpaper_engine",
++      "rootUri": "file:///home/wu/%E9%A1%B9%E7%9B%AE/denial-wallpaper-engine/plugins/denial_wallpaper_engine",
++      "packageUri": "lib/",
++      "languageVersion": "3.13"
++    },
++    {
++      "name": "denial_wire_protocol",
++      "rootUri": "../../../protocol/generated/dart",
++      "packageUri": "lib/",
++      "languageVersion": "3.6"
++    },
++    {
++      "name": "fake_async",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/fake_async-1.3.3",
++      "packageUri": "lib/",
++      "languageVersion": "3.3"
++    },
++    {
++      "name": "ffi",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/ffi-2.2.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.7"
++    },
++    {
++      "name": "file",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/file-7.0.1",
++      "packageUri": "lib/",
++      "languageVersion": "3.0"
++    },
++    {
++      "name": "fixnum",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/fixnum-1.1.1",
++      "packageUri": "lib/",
++      "languageVersion": "3.1"
++    },
++    {
++      "name": "flat_buffers",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/flat_buffers-25.9.23",
++      "packageUri": "lib/",
++      "languageVersion": "2.17"
++    },
++    {
++      "name": "flutter",
++      "rootUri": "file:///home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/flutter/packages/flutter",
++      "packageUri": "lib/",
++      "languageVersion": "3.11"
++    },
++    {
++      "name": "flutter_lints",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/flutter_lints-6.0.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.8"
++    },
++    {
++      "name": "flutter_localizations",
++      "rootUri": "file:///home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/flutter/packages/flutter_localizations",
++      "packageUri": "lib/",
++      "languageVersion": "3.11"
++    },
++    {
++      "name": "flutter_riverpod",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/flutter_riverpod-3.4.3",
++      "packageUri": "lib/",
++      "languageVersion": "3.12"
++    },
++    {
++      "name": "flutter_svg",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/flutter_svg-2.3.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.9"
++    },
++    {
++      "name": "flutter_test",
++      "rootUri": "file:///home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/flutter/packages/flutter_test",
++      "packageUri": "lib/",
++      "languageVersion": "3.11"
++    },
++    {
++      "name": "frontend_server_client",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/frontend_server_client-4.0.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.0"
++    },
++    {
++      "name": "glob",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/glob-2.2.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.3"
++    },
++    {
++      "name": "http",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/http-1.6.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "http_multi_server",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/http_multi_server-3.2.2",
++      "packageUri": "lib/",
++      "languageVersion": "3.2"
++    },
++    {
++      "name": "http_parser",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/http_parser-4.1.2",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "intl",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/intl-0.20.3",
++      "packageUri": "lib/",
++      "languageVersion": "3.9"
++    },
++    {
++      "name": "io",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/io-1.1.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "leak_tracker",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/leak_tracker-11.0.2",
++      "packageUri": "lib/",
++      "languageVersion": "3.2"
++    },
++    {
++      "name": "leak_tracker_flutter_testing",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/leak_tracker_flutter_testing-3.0.10",
++      "packageUri": "lib/",
++      "languageVersion": "3.2"
++    },
++    {
++      "name": "leak_tracker_testing",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/leak_tracker_testing-3.0.2",
++      "packageUri": "lib/",
++      "languageVersion": "3.2"
++    },
++    {
++      "name": "lints",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/lints-6.1.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.8"
++    },
++    {
++      "name": "listen",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/listen-1.0.1",
++      "packageUri": "lib/",
++      "languageVersion": "3.10"
++    },
++    {
++      "name": "logging",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/logging-1.3.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "matcher",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/matcher-0.12.20",
++      "packageUri": "lib/",
++      "languageVersion": "3.10"
++    },
++    {
++      "name": "material_color_utilities",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/material_color_utilities-0.13.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.5"
++    },
++    {
++      "name": "meta",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/meta-1.19.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.5"
++    },
++    {
++      "name": "mime",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/mime-2.1.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.2"
++    },
++    {
++      "name": "node_preamble",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/node_preamble-2.0.2",
++      "packageUri": "lib/",
++      "languageVersion": "2.12"
++    },
++    {
++      "name": "package_config",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/package_config-2.2.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "path",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/path-1.9.1",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "path_parsing",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/path_parsing-1.1.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.3"
++    },
++    {
++      "name": "petitparser",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/petitparser-7.1.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.13"
++    },
++    {
++      "name": "pool",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/pool-1.5.3",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "pub_semver",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/pub_semver-2.2.1",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "riverpod",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/riverpod-3.4.3",
++      "packageUri": "lib/",
++      "languageVersion": "3.12"
++    },
++    {
++      "name": "shelf",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/shelf-1.4.2",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "shelf_packages_handler",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/shelf_packages_handler-3.0.2",
++      "packageUri": "lib/",
++      "languageVersion": "2.17"
++    },
++    {
++      "name": "shelf_static",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/shelf_static-1.1.3",
++      "packageUri": "lib/",
++      "languageVersion": "3.3"
++    },
++    {
++      "name": "shelf_web_socket",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/shelf_web_socket-3.0.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.5"
++    },
++    {
++      "name": "sky_engine",
++      "rootUri": "file:///home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/flutter/bin/cache/pkg/sky_engine",
++      "packageUri": "lib/",
++      "languageVersion": "3.11"
++    },
++    {
++      "name": "source_map_stack_trace",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/source_map_stack_trace-2.1.2",
++      "packageUri": "lib/",
++      "languageVersion": "3.3"
++    },
++    {
++      "name": "source_maps",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/source_maps-0.10.14",
++      "packageUri": "lib/",
++      "languageVersion": "3.3"
++    },
++    {
++      "name": "source_span",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/source_span-1.10.2",
++      "packageUri": "lib/",
++      "languageVersion": "3.1"
++    },
++    {
++      "name": "stack_trace",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/stack_trace-1.12.2",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "state_notifier",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/state_notifier-1.0.0",
++      "packageUri": "lib/",
++      "languageVersion": "2.12"
++    },
++    {
++      "name": "stream_channel",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/stream_channel-2.1.4",
++      "packageUri": "lib/",
++      "languageVersion": "3.3"
++    },
++    {
++      "name": "string_scanner",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/string_scanner-1.4.1",
++      "packageUri": "lib/",
++      "languageVersion": "3.1"
++    },
++    {
++      "name": "term_glyph",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/term_glyph-1.2.2",
++      "packageUri": "lib/",
++      "languageVersion": "3.1"
++    },
++    {
++      "name": "test",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/test-1.31.1",
++      "packageUri": "lib/",
++      "languageVersion": "3.10"
++    },
++    {
++      "name": "test_api",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/test_api-0.7.12",
++      "packageUri": "lib/",
++      "languageVersion": "3.10"
++    },
++    {
++      "name": "test_core",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/test_core-0.6.18",
++      "packageUri": "lib/",
++      "languageVersion": "3.10"
++    },
++    {
++      "name": "typed_data",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/typed_data-1.4.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.5"
++    },
++    {
++      "name": "uuid",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/uuid-4.6.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.0"
++    },
++    {
++      "name": "vector_graphics",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/vector_graphics-1.2.3",
++      "packageUri": "lib/",
++      "languageVersion": "3.10"
++    },
++    {
++      "name": "vector_graphics_codec",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/vector_graphics_codec-1.1.13",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "vector_graphics_compiler",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/vector_graphics_compiler-1.3.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.10"
++    },
++    {
++      "name": "vector_math",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/vector_math-2.4.3",
++      "packageUri": "lib/",
++      "languageVersion": "3.10"
++    },
++    {
++      "name": "vm_service",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/vm_service-15.3.0",
++      "packageUri": "lib/",
++      "languageVersion": "3.5"
++    },
++    {
++      "name": "watcher",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/watcher-1.2.1",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "web",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/web-1.1.1",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "web_socket",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/web_socket-1.0.1",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "web_socket_channel",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/web_socket_channel-3.0.3",
++      "packageUri": "lib/",
++      "languageVersion": "3.3"
++    },
++    {
++      "name": "webkit_inspection_protocol",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/webkit_inspection_protocol-1.2.1",
++      "packageUri": "lib/",
++      "languageVersion": "3.0"
++    },
++    {
++      "name": "xml",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/xml-7.0.1",
++      "packageUri": "lib/",
++      "languageVersion": "3.11"
++    },
++    {
++      "name": "yaml",
++      "rootUri": "file:///home/wu/.pub-cache/hosted/pub.dev/yaml-3.1.4",
++      "packageUri": "lib/",
++      "languageVersion": "3.4"
++    },
++    {
++      "name": "denial_desktop",
++      "rootUri": "../",
++      "packageUri": "lib/",
++      "languageVersion": "3.13"
++    }
++  ],
++  "generator": "pub",
++  "generatorVersion": "3.13.2",
++  "flutterRoot": "file:///home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/flutter",
++  "flutterVersion": "3.47.5",
++  "pubCache": "file:///home/wu/.pub-cache"
++}
+diff -ruN denial_desktop/.dart_tool/package_graph.json /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/plugins/denial_desktop/.dart_tool/package_graph.json
+--- denial_desktop/.dart_tool/package_graph.json	1970-01-01 08:00:00.000000000 +0800
++++ /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/plugins/denial_desktop/.dart_tool/package_graph.json	2026-10-01 17:51:19.947939870 +0800
+@@ -0,0 +1,784 @@
++{
++  "roots": [
++    "denial_desktop"
++  ],
++  "packages": [
++    {
++      "name": "denial_desktop",
++      "version": "0.0.0",
++      "dependencies": [
++        "denial_clock_ui",
++        "denial_flutter_sdk",
++        "denial_sdk",
++        "denial_wallpaper_engine",
++        "flutter",
++        "flutter_riverpod",
++        "flutter_svg"
++      ],
++      "devDependencies": [
++        "flutter_lints",
++        "test"
++      ]
++    },
++    {
++      "name": "denial_flutter_sdk",
++      "version": "0.0.0",
++      "dependencies": [
++        "archive",
++        "collection",
++        "crypto",
++        "dbus",
++        "denial_sdk",
++        "denial_wire_protocol",
++        "ffi",
++        "flat_buffers",
++        "flutter",
++        "flutter_localizations",
++        "flutter_riverpod",
++        "flutter_svg",
++        "intl",
++        "meta",
++        "path",
++        "vector_graphics"
++      ]
++    },
++    {
++      "name": "denial_sdk",
++      "version": "0.0.0",
++      "dependencies": [
++        "meta"
++      ]
++    },
++    {
++      "name": "flutter_lints",
++      "version": "6.0.0",
++      "dependencies": [
++        "lints"
++      ]
++    },
++    {
++      "name": "test",
++      "version": "1.31.1",
++      "dependencies": [
++        "analyzer",
++        "async",
++        "boolean_selector",
++        "collection",
++        "coverage",
++        "http_multi_server",
++        "io",
++        "matcher",
++        "node_preamble",
++        "package_config",
++        "path",
++        "pool",
++        "shelf",
++        "shelf_packages_handler",
++        "shelf_static",
++        "shelf_web_socket",
++        "source_span",
++        "stack_trace",
++        "stream_channel",
++        "test_api",
++        "test_core",
++        "typed_data",
++        "web_socket_channel",
++        "webkit_inspection_protocol",
++        "yaml"
++      ]
++    },
++    {
++      "name": "flutter_svg",
++      "version": "2.3.0",
++      "dependencies": [
++        "flutter",
++        "http",
++        "vector_graphics",
++        "vector_graphics_codec",
++        "vector_graphics_compiler"
++      ]
++    },
++    {
++      "name": "flutter_riverpod",
++      "version": "3.4.3",
++      "dependencies": [
++        "collection",
++        "flutter",
++        "flutter_test",
++        "meta",
++        "riverpod",
++        "state_notifier"
++      ]
++    },
++    {
++      "name": "flutter",
++      "version": "0.0.0",
++      "dependencies": [
++        "characters",
++        "collection",
++        "material_color_utilities",
++        "meta",
++        "sky_engine",
++        "vector_math"
++      ]
++    },
++    {
++      "name": "denial_wallpaper_engine",
++      "version": "0.1.0",
++      "dependencies": [
++        "denial_flutter_sdk",
++        "denial_sdk",
++        "flutter",
++        "flutter_riverpod"
++      ]
++    },
++    {
++      "name": "denial_clock_ui",
++      "version": "0.0.0",
++      "dependencies": [
++        "denial_flutter_sdk",
++        "flutter"
++      ]
++    },
++    {
++      "name": "vector_graphics",
++      "version": "1.2.3",
++      "dependencies": [
++        "flutter",
++        "http",
++        "vector_graphics_codec"
++      ]
++    },
++    {
++      "name": "path",
++      "version": "1.9.1",
++      "dependencies": []
++    },
++    {
++      "name": "meta",
++      "version": "1.19.0",
++      "dependencies": []
++    },
++    {
++      "name": "intl",
++      "version": "0.20.3",
++      "dependencies": [
++        "clock",
++        "meta",
++        "path"
++      ]
++    },
++    {
++      "name": "flutter_localizations",
++      "version": "0.0.0",
++      "dependencies": [
++        "flutter",
++        "intl",
++        "path"
++      ]
++    },
++    {
++      "name": "flat_buffers",
++      "version": "25.9.23",
++      "dependencies": []
++    },
++    {
++      "name": "ffi",
++      "version": "2.2.0",
++      "dependencies": []
++    },
++    {
++      "name": "denial_wire_protocol",
++      "version": "0.1.0",
++      "dependencies": [
++        "flat_buffers"
++      ]
++    },
++    {
++      "name": "dbus",
++      "version": "0.7.15",
++      "dependencies": [
++        "args",
++        "ffi",
++        "meta",
++        "xml"
++      ]
++    },
++    {
++      "name": "crypto",
++      "version": "3.0.7",
++      "dependencies": [
++        "typed_data"
++      ]
++    },
++    {
++      "name": "collection",
++      "version": "1.19.1",
++      "dependencies": []
++    },
++    {
++      "name": "archive",
++      "version": "3.6.1",
++      "dependencies": [
++        "crypto",
++        "path"
++      ]
++    },
++    {
++      "name": "lints",
++      "version": "6.1.0",
++      "dependencies": []
++    },
++    {
++      "name": "yaml",
++      "version": "3.1.4",
++      "dependencies": [
++        "collection",
++        "source_span",
++        "string_scanner"
++      ]
++    },
++    {
++      "name": "webkit_inspection_protocol",
++      "version": "1.2.1",
++      "dependencies": [
++        "logging"
++      ]
++    },
++    {
++      "name": "web_socket_channel",
++      "version": "3.0.3",
++      "dependencies": [
++        "async",
++        "crypto",
++        "stream_channel",
++        "web",
++        "web_socket"
++      ]
++    },
++    {
++      "name": "typed_data",
++      "version": "1.4.0",
++      "dependencies": [
++        "collection"
++      ]
++    },
++    {
++      "name": "test_core",
++      "version": "0.6.18",
++      "dependencies": [
++        "analyzer",
++        "args",
++        "async",
++        "boolean_selector",
++        "collection",
++        "coverage",
++        "frontend_server_client",
++        "glob",
++        "io",
++        "meta",
++        "package_config",
++        "path",
++        "pool",
++        "source_map_stack_trace",
++        "source_maps",
++        "source_span",
++        "stack_trace",
++        "stream_channel",
++        "test_api",
++        "vm_service",
++        "yaml"
++      ]
++    },
++    {
++      "name": "test_api",
++      "version": "0.7.12",
++      "dependencies": [
++        "async",
++        "boolean_selector",
++        "collection",
++        "meta",
++        "source_span",
++        "stack_trace",
++        "stream_channel",
++        "string_scanner",
++        "term_glyph"
++      ]
++    },
++    {
++      "name": "stream_channel",
++      "version": "2.1.4",
++      "dependencies": [
++        "async"
++      ]
++    },
++    {
++      "name": "stack_trace",
++      "version": "1.12.2",
++      "dependencies": [
++        "path"
++      ]
++    },
++    {
++      "name": "source_span",
++      "version": "1.10.2",
++      "dependencies": [
++        "collection",
++        "path",
++        "term_glyph"
++      ]
++    },
++    {
++      "name": "shelf_web_socket",
++      "version": "3.0.0",
++      "dependencies": [
++        "shelf",
++        "stream_channel",
++        "web_socket_channel"
++      ]
++    },
++    {
++      "name": "shelf_static",
++      "version": "1.1.3",
++      "dependencies": [
++        "convert",
++        "http_parser",
++        "mime",
++        "path",
++        "shelf"
++      ]
++    },
++    {
++      "name": "shelf_packages_handler",
++      "version": "3.0.2",
++      "dependencies": [
++        "path",
++        "shelf",
++        "shelf_static"
++      ]
++    },
++    {
++      "name": "shelf",
++      "version": "1.4.2",
++      "dependencies": [
++        "async",
++        "collection",
++        "http_parser",
++        "path",
++        "stack_trace",
++        "stream_channel"
++      ]
++    },
++    {
++      "name": "pool",
++      "version": "1.5.3",
++      "dependencies": [
++        "async",
++        "stack_trace"
++      ]
++    },
++    {
++      "name": "package_config",
++      "version": "2.2.0",
++      "dependencies": [
++        "path"
++      ]
++    },
++    {
++      "name": "node_preamble",
++      "version": "2.0.2",
++      "dependencies": []
++    },
++    {
++      "name": "matcher",
++      "version": "0.12.20",
++      "dependencies": [
++        "async",
++        "meta",
++        "stack_trace",
++        "term_glyph",
++        "test_api"
++      ]
++    },
++    {
++      "name": "io",
++      "version": "1.1.0",
++      "dependencies": [
++        "meta",
++        "path",
++        "string_scanner"
++      ]
++    },
++    {
++      "name": "http_multi_server",
++      "version": "3.2.2",
++      "dependencies": [
++        "async"
++      ]
++    },
++    {
++      "name": "coverage",
++      "version": "1.15.1",
++      "dependencies": [
++        "args",
++        "cli_config",
++        "glob",
++        "logging",
++        "meta",
++        "package_config",
++        "path",
++        "source_maps",
++        "stack_trace",
++        "vm_service",
++        "yaml"
++      ]
++    },
++    {
++      "name": "boolean_selector",
++      "version": "2.1.2",
++      "dependencies": [
++        "source_span",
++        "string_scanner"
++      ]
++    },
++    {
++      "name": "async",
++      "version": "2.13.1",
++      "dependencies": [
++        "collection",
++        "meta"
++      ]
++    },
++    {
++      "name": "analyzer",
++      "version": "13.3.0",
++      "dependencies": [
++        "_fe_analyzer_shared",
++        "collection",
++        "convert",
++        "crypto",
++        "glob",
++        "meta",
++        "package_config",
++        "path",
++        "pub_semver",
++        "source_span",
++        "watcher",
++        "yaml"
++      ]
++    },
++    {
++      "name": "vector_graphics_compiler",
++      "version": "1.3.0",
++      "dependencies": [
++        "args",
++        "meta",
++        "path",
++        "path_parsing",
++        "vector_graphics_codec",
++        "xml"
++      ]
++    },
++    {
++      "name": "vector_graphics_codec",
++      "version": "1.1.13",
++      "dependencies": []
++    },
++    {
++      "name": "http",
++      "version": "1.6.0",
++      "dependencies": [
++        "async",
++        "http_parser",
++        "meta",
++        "web"
++      ]
++    },
++    {
++      "name": "state_notifier",
++      "version": "1.0.0",
++      "dependencies": [
++        "meta"
++      ]
++    },
++    {
++      "name": "riverpod",
++      "version": "3.4.3",
++      "dependencies": [
++        "async",
++        "clock",
++        "collection",
++        "listen",
++        "meta",
++        "stack_trace",
++        "state_notifier",
++        "test_api",
++        "uuid"
++      ]
++    },
++    {
++      "name": "flutter_test",
++      "version": "0.0.0",
++      "dependencies": [
++        "clock",
++        "collection",
++        "fake_async",
++        "flutter",
++        "leak_tracker_flutter_testing",
++        "matcher",
++        "meta",
++        "path",
++        "stack_trace",
++        "stream_channel",
++        "test_api",
++        "vector_math"
++      ]
++    },
++    {
++      "name": "sky_engine",
++      "version": "0.0.0",
++      "dependencies": []
++    },
++    {
++      "name": "vector_math",
++      "version": "2.4.3",
++      "dependencies": []
++    },
++    {
++      "name": "material_color_utilities",
++      "version": "0.13.0",
++      "dependencies": [
++        "collection"
++      ]
++    },
++    {
++      "name": "characters",
++      "version": "1.4.1",
++      "dependencies": []
++    },
++    {
++      "name": "clock",
++      "version": "1.1.3",
++      "dependencies": []
++    },
++    {
++      "name": "xml",
++      "version": "7.0.1",
++      "dependencies": [
++        "collection",
++        "meta",
++        "petitparser"
++      ]
++    },
++    {
++      "name": "args",
++      "version": "2.7.0",
++      "dependencies": []
++    },
++    {
++      "name": "string_scanner",
++      "version": "1.4.1",
++      "dependencies": [
++        "source_span"
++      ]
++    },
++    {
++      "name": "logging",
++      "version": "1.3.0",
++      "dependencies": []
++    },
++    {
++      "name": "web_socket",
++      "version": "1.0.1",
++      "dependencies": [
++        "web"
++      ]
++    },
++    {
++      "name": "web",
++      "version": "1.1.1",
++      "dependencies": []
++    },
++    {
++      "name": "vm_service",
++      "version": "15.3.0",
++      "dependencies": []
++    },
++    {
++      "name": "source_maps",
++      "version": "0.10.14",
++      "dependencies": [
++        "source_span"
++      ]
++    },
++    {
++      "name": "source_map_stack_trace",
++      "version": "2.1.2",
++      "dependencies": [
++        "path",
++        "source_maps",
++        "stack_trace"
++      ]
++    },
++    {
++      "name": "glob",
++      "version": "2.2.0",
++      "dependencies": [
++        "async",
++        "collection",
++        "file",
++        "path",
++        "string_scanner"
++      ]
++    },
++    {
++      "name": "frontend_server_client",
++      "version": "4.0.0",
++      "dependencies": [
++        "async",
++        "path"
++      ]
++    },
++    {
++      "name": "term_glyph",
++      "version": "1.2.2",
++      "dependencies": []
++    },
++    {
++      "name": "mime",
++      "version": "2.1.0",
++      "dependencies": []
++    },
++    {
++      "name": "http_parser",
++      "version": "4.1.2",
++      "dependencies": [
++        "collection",
++        "source_span",
++        "string_scanner",
++        "typed_data"
++      ]
++    },
++    {
++      "name": "convert",
++      "version": "3.1.2",
++      "dependencies": [
++        "typed_data"
++      ]
++    },
++    {
++      "name": "cli_config",
++      "version": "0.2.0",
++      "dependencies": [
++        "args",
++        "yaml"
++      ]
++    },
++    {
++      "name": "watcher",
++      "version": "1.2.1",
++      "dependencies": [
++        "async",
++        "path"
++      ]
++    },
++    {
++      "name": "pub_semver",
++      "version": "2.2.1",
++      "dependencies": [
++        "collection"
++      ]
++    },
++    {
++      "name": "_fe_analyzer_shared",
++      "version": "103.0.0",
++      "dependencies": [
++        "meta"
++      ]
++    },
++    {
++      "name": "path_parsing",
++      "version": "1.1.0",
++      "dependencies": [
++        "meta",
++        "vector_math"
++      ]
++    },
++    {
++      "name": "uuid",
++      "version": "4.6.0",
++      "dependencies": [
++        "crypto",
++        "fixnum"
++      ]
++    },
++    {
++      "name": "listen",
++      "version": "1.0.1",
++      "dependencies": [
++        "meta"
++      ]
++    },
++    {
++      "name": "leak_tracker_flutter_testing",
++      "version": "3.0.10",
++      "dependencies": [
++        "flutter",
++        "leak_tracker",
++        "leak_tracker_testing",
++        "matcher",
++        "meta"
++      ]
++    },
++    {
++      "name": "fake_async",
++      "version": "1.3.3",
++      "dependencies": [
++        "clock",
++        "collection"
++      ]
++    },
++    {
++      "name": "petitparser",
++      "version": "7.1.0",
++      "dependencies": [
++        "collection",
++        "meta"
++      ]
++    },
++    {
++      "name": "file",
++      "version": "7.0.1",
++      "dependencies": [
++        "meta",
++        "path"
++      ]
++    },
++    {
++      "name": "fixnum",
++      "version": "1.1.1",
++      "dependencies": []
++    },
++    {
++      "name": "leak_tracker_testing",
++      "version": "3.0.2",
++      "dependencies": [
++        "leak_tracker",
++        "matcher",
++        "meta"
++      ]
++    },
++    {
++      "name": "leak_tracker",
++      "version": "11.0.2",
++      "dependencies": [
++        "clock",
++        "collection",
++        "meta",
++        "path",
++        "vm_service"
++      ]
++    }
++  ],
++  "configVersion": 1
++}
+\ No newline at end of file
+diff -ruN denial_desktop/.dart_tool/version /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/plugins/denial_desktop/.dart_tool/version
+--- denial_desktop/.dart_tool/version	1970-01-01 08:00:00.000000000 +0800
++++ /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/plugins/denial_desktop/.dart_tool/version	2026-10-01 17:51:19.980940804 +0800
+@@ -0,0 +1 @@
++3.47.5
+\ No newline at end of file
+diff -ruN denial_desktop/lib/src/settings/widgets/settings_appearance_page.dart /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/plugins/denial_desktop/lib/src/settings/widgets/settings_appearance_page.dart
+--- denial_desktop/lib/src/settings/widgets/settings_appearance_page.dart	2026-10-01 10:04:13.000000000 +0800
++++ /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/plugins/denial_desktop/lib/src/settings/widgets/settings_appearance_page.dart	2026-10-01 17:50:44.740049183 +0800
+@@ -11,6 +11,7 @@
+ import 'settings_controls.dart';
+ import 'settings_glass_tuning_controls.dart';
+ import 'settings_wallpaper_card.dart';
++import 'settings_dynamic_wallpaper_card.dart';
+ 
+ const settingsWallpaperTriggerKey = ValueKey<String>(
+   'settings-wallpaper-trigger',
+@@ -208,6 +209,7 @@
+           outputName: widget.wallpaperOutputName,
+           onChoose: widget.onOpenWallpaperSelector,
+         ),
++        const LweDynamicWallpaperCard(),
+         SettingsCardGroup(
+           key: const ValueKey('appearance-theme-card'),
+           title: l10n.settingsAppearanceTheme,
+diff -ruN denial_desktop/lib/src/settings/widgets/settings_dynamic_wallpaper_card.dart /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/plugins/denial_desktop/lib/src/settings/widgets/settings_dynamic_wallpaper_card.dart
+--- denial_desktop/lib/src/settings/widgets/settings_dynamic_wallpaper_card.dart	1970-01-01 08:00:00.000000000 +0800
++++ /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/plugins/denial_desktop/lib/src/settings/widgets/settings_dynamic_wallpaper_card.dart	2026-10-02 01:01:25.176437376 +0800
+@@ -0,0 +1,386 @@
++import 'dart:io';
++
++import 'package:flutter/material.dart';
++import 'package:flutter_riverpod/flutter_riverpod.dart';
++import 'package:denial_wallpaper_engine/denial_wallpaper_engine.dart';
++
++import 'settings_controls.dart';
++
++/// Dynamic wallpaper (Wallpaper Engine) section for the Appearance page.
++///
++/// The card edits the same persisted state the shell-side panel manages:
++/// rotation playlist, engine parameters (saved, not applied live), and a
++/// shortcut that opens the full-screen panel in the shell via a trigger file.
++class LweDynamicWallpaperCard extends ConsumerWidget {
++  const LweDynamicWallpaperCard({super.key});
++
++  Future<void> _openPanel() async {
++    final file = panelTriggerFile();
++    await file.parent.create(recursive: true);
++    await file.writeAsString(DateTime.now().toIso8601String());
++  }
++
++  @override
++  Widget build(BuildContext context, WidgetRef ref) {
++    final state = ref.watch(lweControllerProvider);
++
++    return state.when(
++      loading: () => const SettingsCardGroup(
++        title: '动态壁纸 (Wallpaper Engine)',
++        children: [
++          SettingsCardPadding(
++            child: Center(child: CircularProgressIndicator()),
++          ),
++        ],
++      ),
++      error: (error, _) => SettingsCardGroup(
++        title: '动态壁纸 (Wallpaper Engine)',
++        description: '读取配置失败：$error',
++        children: const [SizedBox.shrink()],
++      ),
++      data: (state) => _buildStateful(context, ref, state),
++    );
++  }
++
++  Widget _buildStateful(
++    BuildContext context,
++    WidgetRef ref,
++    LweState state,
++  ) {
++    final settings = state.settings;
++    final controller = ref.read(lweControllerProvider.notifier);
++    final wallpapers = ref.watch(lweWallpapersProvider);
++    final activeId = state.currentWallpaperId;
++
++    return SettingsCardGroup(
++      title: '动态壁纸 (Wallpaper Engine)',
++      description: '由 linux-wallpaperengine 渲染 Workshop 动态壁纸，'
++          '静态壁纸在其上层仍然生效。',
++      children: [
++        SettingsCardPadding(
++          child: Row(
++            children: [
++              SettingsTextButton(label: '打开管理面板', onPressed: _openPanel),
++              const SizedBox(width: 8),
++              Text(
++                state.enabled
++                    ? (activeId != null ? '运行中' : '已启用（未选择壁纸）')
++                    : '已停止',
++                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
++                      color: Theme.of(context).colorScheme.onSurfaceVariant,
++                    ),
++              ),
++            ],
++          ),
++        ),
++        SettingsCardPadding(
++          child: SettingsToggle(
++            label: '启用动态壁纸',
++            description: state.enabled
++                ? '登录后自动恢复并应用轮换'
++                : '动态壁纸已停止，打开开关立即恢复',
++            value: state.enabled,
++            onChanged: (value) => controller.setEnabled(value),
++          ),
++        ),
++        SettingsCardPadding(
++          child: _WallpaperGrid(
++            wallpapers: wallpapers,
++            playlist: state.playlist,
++            activeId: activeId,
++            enabled: state.enabled,
++            onToggle: controller.togglePlaylistItem,
++          ),
++        ),
++        SettingsCardPadding(
++          child: SettingsSlider(
++            label: '轮换间隔',
++            value: state.rotationMinutes.toDouble(),
++            minimum: 0,
++            maximum: 120,
++            divisions: 24,
++            valueLabel: state.rotationMinutes <= 0
++                ? '关闭'
++                : '${state.rotationMinutes} 分钟',
++            onChanged: (value) =>
++                controller.setRotationMinutes(value.round()),
++          ),
++        ),
++        SettingsCardPadding(
++          child: SettingsSlider(
++            label: '帧率上限',
++            value: settings.fps.toDouble(),
++            minimum: 5,
++            maximum: 120,
++            divisions: 23,
++            valueLabel: '${settings.fps} FPS',
++            onChanged: (value) =>
++                controller.updateSettings(settings.copyWith(fps: value.round())),
++          ),
++        ),
++        SettingsCardPadding(
++          child: SettingsToggle(
++            label: '静音',
++            description: '静音同时停用音频分析；关闭后可用音量控制',
++            value: settings.silent,
++            onChanged: (value) =>
++                controller.updateSettings(settings.copyWith(silent: value)),
++          ),
++        ),
++        if (!settings.silent)
++          SettingsCardPadding(
++            child: SettingsSlider(
++              label: '音量',
++              value: settings.volume.toDouble(),
++              minimum: 0,
++              maximum: 128,
++              divisions: 32,
++              valueLabel: '${settings.volume}',
++              onChanged: (value) => controller.updateSettings(
++                settings.copyWith(volume: value.round()),
++              ),
++            ),
++          ),
++        SettingsCardPadding(
++          child: SettingsSelect<String>(
++            label: '缩放模式',
++            description: 'default 跟随引擎；fit 留边、fill 裁切、stretch 拉伸',
++            value: settings.scaling,
++            choices: const [
++              SettingsChoice('default', 'default'),
++              SettingsChoice('fit', 'fit'),
++              SettingsChoice('fill', 'fill'),
++              SettingsChoice('stretch', 'stretch'),
++            ],
++            onChanged: (value) =>
++                controller.updateSettings(settings.copyWith(scaling: value)),
++          ),
++        ),
++        SettingsCardPadding(
++          child: SettingsToggle(
++            label: '全屏时暂停',
++            description: '前台应用全屏时暂停动态壁纸以节省资源',
++            value: settings.fullscreenPause,
++            onChanged: (value) =>
++                controller.updateSettings(settings.copyWith(fullscreenPause: value)),
++          ),
++        ),
++        SettingsCardPadding(
++          child: SettingsToggle(
++            label: '禁用鼠标交互',
++            description: '阻止壁纸响应指针事件',
++            value: settings.disableMouse,
++            onChanged: (value) =>
++                controller.updateSettings(settings.copyWith(disableMouse: value)),
++          ),
++        ),
++        SettingsCardPadding(
++          child: SettingsControlRow(
++            label: '应用参数',
++            description: '参数仅保存；点击后以当前参数重启壁纸进程',
++            control: SettingsTextButton(
++              label: '应用参数',
++              onPressed: () => controller.applySettingsNow(),
++            ),
++          ),
++        ),
++      ],
++    );
++  }
++}
++
++class _WallpaperGrid extends ConsumerWidget {
++  const _WallpaperGrid({
++    required this.wallpapers,
++    required this.playlist,
++    required this.activeId,
++    required this.enabled,
++    required this.onToggle,
++  });
++
++  final AsyncValue<List<WorkshopWallpaper>> wallpapers;
++  final List<String> playlist;
++  final String? activeId;
++  final bool enabled;
++  final ValueChanged<String> onToggle;
++
++  @override
++  Widget build(BuildContext context, WidgetRef ref) {
++    final colors = Theme.of(context);
++    return wallpapers.when(
++      loading: () => const Padding(
++        padding: EdgeInsets.symmetric(vertical: 18),
++        child: Center(child: CircularProgressIndicator()),
++      ),
++      error: (error, _) => Text(
++        '读取 Workshop 壁纸失败：$error',
++        style: colors.textTheme.bodyMedium,
++      ),
++      data: (items) {
++        if (items.isEmpty) {
++          return Text(
++            '未找到 Workshop 壁纸。请先在 Steam 的 Wallpaper Engine 创意工坊订阅并下载至少一个壁纸。',
++            style: colors.textTheme.bodyMedium,
++          );
++        }
++        return Column(
++          crossAxisAlignment: CrossAxisAlignment.stretch,
++          children: [
++            Row(
++              children: [
++                Text(
++                  '轮换列表（${playlist.length}/${items.length}）',
++                  style: colors.textTheme.titleSmall,
++                ),
++                const SizedBox(width: 12),
++                Text(
++                  '单击勾选加入/移出轮换',
++                  style: colors.textTheme.bodySmall?.copyWith(
++                    color: colors.colorScheme.onSurfaceVariant,
++                  ),
++                ),
++              ],
++            ),
++            const SizedBox(height: 12),
++            LayoutBuilder(
++              builder: (context, constraints) {
++                const minTile = 148.0;
++                final columns =
++                    (constraints.maxWidth / minTile).floor().clamp(2, 6);
++                return GridView.builder(
++                  shrinkWrap: true,
++                  physics: const NeverScrollableScrollPhysics(),
++                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
++                    crossAxisCount: columns,
++                    mainAxisSpacing: 10,
++                    crossAxisSpacing: 10,
++                    childAspectRatio: 16 / 11,
++                  ),
++                  itemCount: items.length,
++                  itemBuilder: (context, index) {
++                    final item = items[index];
++                    final inPlaylist = playlist.contains(item.id);
++                    final active = item.id == activeId;
++                    return _WallpaperTile(
++                      item: item,
++                      inPlaylist: inPlaylist,
++                      active: active,
++                      enabled: enabled,
++                      onTap: () => onToggle(item.id),
++                    );
++                  },
++                );
++              },
++            ),
++          ],
++        );
++      },
++    );
++  }
++}
++
++class _WallpaperTile extends StatelessWidget {
++  const _WallpaperTile({
++    required this.item,
++    required this.inPlaylist,
++    required this.active,
++    required this.enabled,
++    required this.onTap,
++  });
++
++  final WorkshopWallpaper item;
++  final bool inPlaylist;
++  final bool active;
++  final bool enabled;
++  final VoidCallback onTap;
++
++  @override
++  Widget build(BuildContext context) {
++    final theme = Theme.of(context);
++    final colors = theme.colorScheme;
++    final borderRadius = BorderRadius.circular(12);
++    return Opacity(
++      opacity: enabled ? 1 : 0.45,
++      child: InkWell(
++        borderRadius: borderRadius,
++        onTap: enabled ? onTap : null,
++        child: DecoratedBox(
++          decoration: BoxDecoration(
++            borderRadius: borderRadius,
++            border: Border.all(
++              color: active
++                  ? colors.primary
++                  : inPlaylist
++                  ? colors.primary.withValues(alpha: .55)
++                  : colors.outlineVariant,
++              width: active ? 2 : 1,
++            ),
++          ),
++          child: ClipRRect(
++            borderRadius: borderRadius,
++            child: Stack(
++              fit: StackFit.expand,
++              children: [
++                if (item.preview != null)
++                  Image.file(
++                    File(item.preview!),
++                    fit: BoxFit.cover,
++                    errorBuilder: (_, _, _) =>
++                        ColoredBox(color: colors.surfaceContainerHighest),
++                  )
++                else
++                  ColoredBox(color: colors.surfaceContainerHighest),
++                Positioned(
++                  left: 0,
++                  right: 0,
++                  bottom: 0,
++                  child: DecoratedBox(
++                    decoration: BoxDecoration(
++                      gradient: LinearGradient(
++                        begin: Alignment.topCenter,
++                        end: Alignment.bottomCenter,
++                        colors: [
++                          colors.surface.withValues(alpha: 0),
++                          colors.surface.withValues(alpha: 0.92),
++                        ],
++                      ),
++                    ),
++                    child: Padding(
++                      padding: const EdgeInsets.fromLTRB(8, 14, 8, 6),
++                      child: Row(
++                        children: [
++                          Expanded(
++                            child: Text(
++                              item.title,
++                              maxLines: 1,
++                              overflow: TextOverflow.ellipsis,
++                              style: theme.textTheme.labelMedium,
++                            ),
++                          ),
++                          if (inPlaylist)
++                            Icon(
++                              Icons.loop_rounded,
++                              size: 13,
++                              color: colors.primary,
++                            ),
++                          if (active) ...[
++                            const SizedBox(width: 4),
++                            Icon(
++                              Icons.check_circle_rounded,
++                              size: 14,
++                              color: colors.primary,
++                            ),
++                          ],
++                        ],
++                      ),
++                    ),
++                  ),
++                ),
++              ],
++            ),
++          ),
++        ),
++      ),
++    );
++  }
++}
+diff -ruN denial_desktop/lib/src/settings/widgets/settings_wallpaper_card.dart /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/plugins/denial_desktop/lib/src/settings/widgets/settings_wallpaper_card.dart
+--- denial_desktop/lib/src/settings/widgets/settings_wallpaper_card.dart	2026-10-01 10:04:13.000000000 +0800
++++ /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/plugins/denial_desktop/lib/src/settings/widgets/settings_wallpaper_card.dart	2026-10-01 19:37:47.498325176 +0800
+@@ -1,3 +1,5 @@
++import 'dart:io';
++
+ import 'package:denial_flutter_sdk/materials.dart';
+ import 'package:flutter/material.dart';
+ 
+@@ -66,12 +68,29 @@
+           Text(l10n.settingsWallpaperDisplay(outputName!), style: secondary),
+         ],
+         const SizedBox(height: 16),
+-        SettingsTextButton(
+-          key: chooseKey,
+-          label: external
+-              ? l10n.settingsWallpaperChooseFallback
+-              : l10n.settingsWallpaperChoose,
+-          onPressed: onChoose,
++        Row(
++          children: [
++            SettingsTextButton(
++              label: '设置壁纸',
++              onPressed: () async {
++                final home = Platform.environment['HOME'];
++                if (home == null) return;
++                final dir = Directory('$home/.config/denial-wallpaper-engine');
++                await dir.create(recursive: true);
++                await File(
++                  '$home/.config/denial-wallpaper-engine/panel-open',
++                ).writeAsString(DateTime.now().toIso8601String());
++              },
++            ),
++            const SizedBox(width: 8),
++            SettingsTextButton(
++              key: chooseKey,
++              label: external
++                  ? l10n.settingsWallpaperChooseFallback
++                  : l10n.settingsWallpaperChoose,
++              onPressed: onChoose,
++            ),
++          ],
+         ),
+       ],
+     );
+diff -ruN denial_desktop/pubspec.lock /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/plugins/denial_desktop/pubspec.lock
+--- denial_desktop/pubspec.lock	2026-10-01 10:04:13.000000000 +0800
++++ /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/plugins/denial_desktop/pubspec.lock	2026-10-01 17:51:19.943939757 +0800
+@@ -134,6 +134,13 @@
+       relative: true
+     source: path
+     version: "0.0.0"
++  denial_wallpaper_engine:
++    dependency: "direct main"
++    description:
++      path: "/home/wu/项目/denial-wallpaper-engine/plugins/denial_wallpaper_engine"
++      relative: false
++    source: path
++    version: "0.1.0"
+   denial_wire_protocol:
+     dependency: transitive
+     description:
+diff -ruN denial_desktop/pubspec.yaml /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/plugins/denial_desktop/pubspec.yaml
+--- denial_desktop/pubspec.yaml	2026-10-01 10:04:13.000000000 +0800
++++ /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/plugins/denial_desktop/pubspec.yaml	2026-10-01 17:50:28.854777572 +0800
+@@ -10,6 +10,8 @@
+     path: ../denial_clock/ui
+   denial_flutter_sdk:
+     path: ../../packages/denial_flutter_sdk
++  denial_wallpaper_engine:
++    path: /home/wu/项目/denial-wallpaper-engine/plugins/denial_wallpaper_engine
+   denial_sdk:
+     path: ../../packages/denial_sdk
+   flutter:
+diff -ruN denial_desktop/pubspec_overrides.yaml /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/plugins/denial_desktop/pubspec_overrides.yaml
+--- denial_desktop/pubspec_overrides.yaml	1970-01-01 08:00:00.000000000 +0800
++++ /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/plugins/denial_desktop/pubspec_overrides.yaml	2026-10-01 17:51:16.632845760 +0800
+@@ -0,0 +1,5 @@
++dependency_overrides:
++  denial_sdk:
++    path: /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/packages/denial_sdk
++  denial_flutter_sdk:
++    path: /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/packages/denial_flutter_sdk

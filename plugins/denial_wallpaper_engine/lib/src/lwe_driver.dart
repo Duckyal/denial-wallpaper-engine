@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,12 +16,23 @@ class LweDriver {
   final String configPath;
   Process? _process;
   int? _lastPid;
+  int _pendingStarts = 0;
   Future<void> _applyQueue = Future<void>.value();
+  String? _cachedWaylandDisplay;
+
+  /// True while a scheduled startup apply has not fired yet. The panel-open
+  /// sync defers to it: the engine being absent during the first-frame
+  /// window is intentional and must not read as "stopped".
+  bool get hasScheduledStart => _pendingStarts > 0;
 
   /// The compositor's Wayland socket name. deniald itself is the compositor
   /// server, so its environment carries no WAYLAND_DISPLAY; children spawned
   /// from the shell need it pointed at the session socket to connect.
+  ///
+  /// The result is cached after the first call because the Wayland socket
+  /// does not change during a session.
   String? _waylandDisplay() {
+    if (_cachedWaylandDisplay != null) return _cachedWaylandDisplay;
     final runtime = Platform.environment['XDG_RUNTIME_DIR'];
     if (runtime == null) return null;
     final dir = Directory(runtime);
@@ -34,7 +46,8 @@ class LweDriver {
             )
             .toList()
           ..sort();
-    return sockets.isEmpty ? null : sockets.last;
+    _cachedWaylandDisplay = sockets.isEmpty ? null : sockets.last;
+    return _cachedWaylandDisplay;
   }
 
   /// Starts the wallpaper process with the given wallpaper ID and settings.
@@ -68,14 +81,77 @@ class LweDriver {
       rethrow;
     }
     final process = _process!;
-    // Consume stdout/stderr to prevent log flooding.
-    process.stdout.listen((_) {});
-    process.stderr.listen((_) {});
+    process.stdout.drain<void>();
+    process.stderr
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((line) => lweLog('engine stderr: $line'));
     unawaited(
       process.exitCode.then(
         (code) => lweLog('engine pid=${process.pid} exited code=$code'),
       ),
     );
+  }
+
+  /// Whether a wallpaper engine process is actually rendering right now.
+  ///
+  /// Checks our tracked child first, then any engine instance pgrep can see
+  /// — the latter covers processes from an earlier shell instance or started
+  /// externally, which the in-memory fields miss. This is the ground truth
+  /// the panel sync reconciles the persisted `enabled` flag against.
+  Future<bool> isRendering() async {
+    final process = _process;
+    if (process != null) {
+      // Zero-timeout probe: the future only completes once the process has
+      // exited, so the timeout sentinel means "still running".
+      const running = -0x100000;
+      final exit = await process.exitCode.timeout(
+        Duration.zero,
+        onTimeout: () => running,
+      );
+      if (exit == running) return true;
+    }
+    try {
+      final result = await Process.run('pgrep', [
+        '-f',
+        'linux-wallpaperengine',
+      ]);
+      return result.exitCode == 0;
+    } on Object {
+      return false;
+    }
+  }
+
+  /// Schedules the startup apply after [delay] — the compositor's
+  /// first-frame window must pass before a second GPU client may spawn —
+  /// reaping leftover instances just before the spawn. [shouldRun] is
+  /// re-checked at fire time so a disable landing inside the delay window
+  /// still prevents the start.
+  Future<void> scheduleApply(
+    Duration delay,
+    String id,
+    LweSettings settings, {
+    Future<bool> Function()? shouldRun,
+  }) {
+    final done = Completer<void>();
+    _pendingStarts++;
+    Timer(delay, () async {
+      try {
+        if (shouldRun != null && !await shouldRun()) {
+          lweLog('scheduled apply skipped: disabled since schedule');
+          if (!done.isCompleted) done.complete();
+          return;
+        }
+        await reapStaleInstances();
+        await apply(id, settings);
+        if (!done.isCompleted) done.complete();
+      } on Object catch (error, stack) {
+        if (!done.isCompleted) done.completeError(error, stack);
+      } finally {
+        _pendingStarts--;
+      }
+    });
+    return done.future;
   }
 
   /// Stops the current wallpaper process.

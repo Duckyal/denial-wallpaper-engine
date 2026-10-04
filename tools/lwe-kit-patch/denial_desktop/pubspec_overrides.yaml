@@ -1,0 +1,5 @@
+dependency_overrides:
+  denial_sdk:
+    path: /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/packages/denial_sdk
+  denial_flutter_sdk:
+    path: /home/wu/.local/state/denial/plugins/build-kits/3cee60e0f668bf882317bb71499dc211a2293bf1e90e495c7e9f96721df54422/runtime/packages/denial_flutter_sdk

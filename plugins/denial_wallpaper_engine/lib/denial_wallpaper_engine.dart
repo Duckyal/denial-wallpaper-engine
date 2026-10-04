@@ -17,7 +17,13 @@ import 'package:denial_flutter_sdk/input.dart';
 import 'package:denial_flutter_sdk/models.dart';
 import 'package:denial_flutter_sdk/state.dart';
 import 'package:denial_flutter_sdk/surfaces.dart';
-import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
+import 'package:flutter/services.dart'
+    show
+        HardwareKeyboard,
+        KeyDownEvent,
+        KeyEvent,
+        KeyEventResult,
+        LogicalKeyboardKey;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -180,12 +186,63 @@ class _LwePanelHostState extends ConsumerState<_LwePanelHost> {
   StreamSubscription<FileSystemEvent>? _triggerSubscription;
   bool _visible = false;
 
+  /// The shell's own "close window" bindings ("Meta+q" …). The panel is a
+  /// surface, not a window, so the compositor has nothing to close — it has
+  /// to honour those keys itself or it feels stuck on screen.
+  List<String> _closeShortcuts = const [];
+
   @override
   void initState() {
     super.initState();
     lweLog('panel host mounted');
     _subscription = LwePanelBus.instance.events.listen(_onEvent);
     _listenPanelTrigger();
+  }
+
+  Future<void> _loadCloseShortcuts() async {
+    try {
+      final bridge = ref.read(denialBridgeProvider);
+      final config = await bridge.readShortcutConfiguration();
+      if (!mounted) return;
+      setState(() {
+        _closeShortcuts = [
+          for (final binding in config.shortcuts)
+            if (binding.target is DenialShortcutActionTarget &&
+                (binding.target as DenialShortcutActionTarget).action ==
+                    DenialShortcutAction.closeWindow)
+              binding.shortcut,
+        ];
+      });
+      lweLog('close-window shortcuts: $_closeShortcuts');
+    } on Object catch (error) {
+      lweLog('close shortcut lookup failed: $error');
+    }
+  }
+
+  /// "Meta+q" → meta down + "q", with modifiers that are NOT part of the
+  /// binding required to be up so Meta+Shift+Q doesn't close the panel.
+  bool _matchesShortcut(String shortcut, KeyEvent event) {
+    final parts = shortcut
+        .split('+')
+        .map((part) => part.trim().toLowerCase())
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return false;
+    final key = parts.removeLast();
+    final modifiers = parts.toSet();
+    final keyboard = HardwareKeyboard.instance;
+    final wantMeta = modifiers.contains('meta') ||
+        modifiers.contains('super') ||
+        modifiers.contains('cmd');
+    final wantCtrl =
+        modifiers.contains('ctrl') || modifiers.contains('control');
+    final wantAlt = modifiers.contains('alt');
+    final wantShift = modifiers.contains('shift');
+    if (wantMeta != keyboard.isMetaPressed) return false;
+    if (wantCtrl != keyboard.isControlPressed) return false;
+    if (wantAlt != keyboard.isAltPressed) return false;
+    if (wantShift != keyboard.isShiftPressed) return false;
+    return event.logicalKey.keyLabel.toLowerCase() == key;
   }
 
   /// The settings app runs in its own process; it requests the panel by
@@ -200,7 +257,7 @@ class _LwePanelHostState extends ConsumerState<_LwePanelHost> {
             if (!event.path.endsWith('panel-open')) return;
             panelTriggerFile().deleteSync();
             if (mounted && !_visible) {
-              setState(() => _visible = true);
+              _showPanel();
             }
           });
     } on Object catch (error) {
@@ -211,12 +268,26 @@ class _LwePanelHostState extends ConsumerState<_LwePanelHost> {
   Future<void> _onEvent(LwePanelEvent event) async {
     switch (event) {
       case LwePanelEvent.toggle:
-        setState(() => _visible = !_visible);
+        if (_visible) {
+          setState(() => _visible = false);
+        } else {
+          _showPanel();
+        }
       case LwePanelEvent.close:
         if (_visible) setState(() => _visible = false);
       case LwePanelEvent.random:
         await ref.read(lweControllerProvider.notifier).applyRandom();
     }
+  }
+
+  void _showPanel() {
+    setState(() => _visible = true);
+    // Re-read on every open: the binding may have changed in settings.
+    unawaited(_loadCloseShortcuts());
+    // The enable toggle shows the ENGINE's real state, not just the config's
+    // claim; query once per open so a drifted flag (crash, external engine
+    // start, an older boot) reconciles before the user reads it.
+    unawaited(ref.read(lweControllerProvider.notifier).syncRenderingState());
   }
 
   @override
@@ -241,10 +312,17 @@ class _LwePanelHostState extends ConsumerState<_LwePanelHost> {
       child: Focus(
         autofocus: _visible,
         onKeyEvent: (node, event) {
-          if (event is KeyDownEvent &&
-              event.logicalKey == LogicalKeyboardKey.escape) {
-            setState(() => _visible = false);
-            return KeyEventResult.handled;
+          if (event is KeyDownEvent) {
+            if (event.logicalKey == LogicalKeyboardKey.escape) {
+              setState(() => _visible = false);
+              return KeyEventResult.handled;
+            }
+            for (final shortcut in _closeShortcuts) {
+              if (_matchesShortcut(shortcut, event)) {
+                setState(() => _visible = false);
+                return KeyEventResult.handled;
+              }
+            }
           }
           return KeyEventResult.ignored;
         },

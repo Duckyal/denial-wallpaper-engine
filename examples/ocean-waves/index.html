@@ -13,11 +13,12 @@
 <script>
 const canvas = document.getElementById('waves');
 const ctx = canvas.getContext('2d');
-let W, H, t = 0;
+let W, H, t = 0, step = 8;
 
 function resize() {
   W = canvas.width = innerWidth * devicePixelRatio;
   H = canvas.height = innerHeight * devicePixelRatio;
+  step = Math.max(4, Math.round(8 / devicePixelRatio));
 }
 addEventListener('resize', resize);
 resize();
@@ -25,7 +26,7 @@ resize();
 function wave(yBase, amp, speed, color) {
   ctx.beginPath();
   ctx.moveTo(0, H);
-  for (let x = 0; x <= W; x += 8) {
+  for (let x = 0; x <= W; x += step) {
     const y = yBase * H + Math.sin(x * 0.002 + t * speed) * amp
               + Math.sin(x * 0.005 - t * speed * 0.6) * amp * 0.5;
     ctx.lineTo(x, y);

@@ -18,6 +18,9 @@ String configPath() {
 /// Content of the most recent config write by THIS process. The config
 /// watcher compares against it so our own saves (panel tweaks) don't look
 /// like external edits and trigger a spurious engine restart.
+///
+/// Owned by [LweController] so the watcher can read it without a global
+/// mutable variable.
 String? lastConfigWrite;
 
 /// Absolute path of the cross-process panel trigger. The settings app (a
@@ -112,14 +115,20 @@ class LweController extends AsyncNotifier<LweState> {
   }
 
   /// Applies a random wallpaper: the rotation playlist when set, otherwise
-  /// every installed wallpaper.
+  /// every installed wallpaper. Prefers the cached provider to avoid a full
+  /// disk scan on every rotation tick.
   Future<void> applyRandom() async {
     final current = await future;
-    final discovery = ref.read(workshopDiscoveryProvider);
     var pool = current.playlist;
     if (pool.isEmpty) {
-      final all = await discovery.getWallpapers();
-      pool = [for (final item in all) item.id];
+      // Riverpod 3 移除了 AsyncValue.valueOrNull，可空值直接读 .value。
+      final cached = ref.read(lweWallpapersProvider).value;
+      if (cached != null) {
+        pool = [for (final item in cached) item.id];
+      } else {
+        final all = await ref.read(workshopDiscoveryProvider).getWallpapers();
+        pool = [for (final item in all) item.id];
+      }
     }
     pool = pool.where((id) => id != current.currentWallpaperId).toList();
     if (pool.isEmpty) return;
@@ -136,6 +145,39 @@ class LweController extends AsyncNotifier<LweState> {
     _rotationTimer?.cancel();
     _rotationTimer = null;
     await _applyQueue.run(() => ref.read(lweDriverProvider).stop());
+  }
+
+  /// Reconciles the persisted `enabled` flag with the engine's ACTUAL state.
+  ///
+  /// Called when the panel opens: the toggle must show whether a wallpaper
+  /// is really rendering, not what the config last claimed — a crash, a
+  /// manual engine start, or an older boot can drift the two apart. The
+  /// reconciled value is persisted so the next boot restores honestly.
+  Future<void> syncRenderingState() async {
+    try {
+      final driver = ref.read(lweDriverProvider);
+      // The deferred startup apply has not fired yet: the engine being
+      // absent right now is intentional, so neither direction may flip.
+      if (driver.hasScheduledStart) {
+        lweLog('sync: startup apply pending, skipping');
+        return;
+      }
+      final rendering = await driver.isRendering();
+      final current = await future;
+      if (rendering == current.enabled) return;
+      final newState = current.copyWith(enabled: rendering);
+      await _save(newState);
+      state = AsyncData(newState);
+      if (rendering) {
+        _startRotationTimer(newState.rotationMinutes);
+      } else {
+        _rotationTimer?.cancel();
+        _rotationTimer = null;
+      }
+      lweLog('sync: enabled -> $rendering');
+    } on Object catch (error, stack) {
+      lweLog('sync failed: $error\n$stack');
+    }
   }
 
   /// Re-enables the stored wallpaper or disables the running one.
@@ -226,7 +268,9 @@ class _SerialQueue {
 
   Future<void> run(Future<void> Function() task) {
     final run = _tail.then((_) => task());
-    _tail = run.catchError((Object _) {});
+    _tail = run.catchError((Object error) {
+      lweLog('SerialQueue task failed: $error');
+    });
     return run;
   }
 }

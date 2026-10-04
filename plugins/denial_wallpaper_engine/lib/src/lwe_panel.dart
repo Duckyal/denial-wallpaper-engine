@@ -183,7 +183,12 @@ class _LweWallpaperPanelState extends ConsumerState<LweWallpaperPanel> {
               ),
               data: (state) {
                 _loadedState = state;
-                _draft ??= state;
+                // The draft never edits `enabled` itself (only immediate
+                // actions and the panel-open sync change it), so re-fold it
+                // from the controller on every emission — that's how a sync
+                // landing after the draft was seeded still reaches the
+                // toggle.
+                _draft = _draft?.copyWith(enabled: state.enabled) ?? state;
                 return _buildPanel(context, ref);
               },
             ),
@@ -714,6 +719,8 @@ class _Tile extends StatelessWidget {
                   Image.file(
                     File(item.preview!),
                     fit: BoxFit.cover,
+                    cacheWidth: 420,
+                    cacheHeight: 262,
                     errorBuilder: (_, _, _) =>
                         ColoredBox(color: scheme.surfaceContainerHighest),
                   )

@@ -1,0 +1,43 @@
+name: denial_desktop
+description: Denial's reference desktop and mobile shell composition.
+publish_to: none
+version: 0.0.0
+environment:
+  sdk: ^3.13.0
+  flutter: 3.47.5
+dependencies:
+  denial_clock_ui:
+    path: ../denial_clock/ui
+  denial_flutter_sdk:
+    path: ../../packages/denial_flutter_sdk
+  denial_wallpaper_engine:
+    path: /home/wu/项目/denial-wallpaper-engine/plugins/denial_wallpaper_engine
+  denial_sdk:
+    path: ../../packages/denial_sdk
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.3.2
+  flutter_svg: ^2.3.0
+dev_dependencies:
+  test: ^1.31.1
+  flutter_lints: ^6.0.0
+denial_plugin:
+  schema: 1
+  name: Reference Desktop
+  provides:
+  - contract: package:denial_flutter_sdk/application.dart#ShellApplication
+  requires:
+  - contract: package:denial_flutter_sdk/surfaces.dart#ShellSurface
+    label: Desktop surfaces
+    min: 0
+    max: null
+  - contract: package:denial_flutter_sdk/surfaces.dart#ShellWorkArea
+    label: Native work area
+    min: 0
+    max: 1
+  - contract: package:denial_flutter_sdk/launcher.dart#ShellLauncher
+    label: App launcher
+    min: 0
+    max: 1
+flutter:
+  uses-material-design: true

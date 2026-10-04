@@ -25,22 +25,30 @@ class LweBootstrap {
     final state = await controller.current();
     final id = state.currentWallpaperId;
     lweLog('restore: enabled=${state.enabled} id=$id');
-    if (id != null) {
-      // Spawning the engine during the shell's first-frame window (deniald
-      // waits up to 20s for the initial frame) makes the two GPU clients race
-      // and the UI never presents, so deniald restores the packaged shell.
-      // Defer past that window; the desktop is stable by then.
-      lweLog('restore: deferring apply past the first-frame window');
-      Timer(const Duration(seconds: 25), () async {
-        try {
-          await driver.reapStaleInstances();
-          await driver.apply(id, state.settings);
-          lweLog('delayed apply finished');
-        } on Object catch (error) {
-          lweLog('delayed apply failed: $error');
-        }
-      });
-    }
+    // Honor a persisted disable: turning the wallpaper off before a reboot
+    // must keep it off after the reboot. The panel toggle reads this same
+    // flag, so spawning anyway left it showing "off" over a live wallpaper.
+    if (!state.enabled || id == null) return;
+    // Spawning the engine during the shell's first-frame window (deniald
+    // waits up to 20s for the initial frame) makes the two GPU clients race
+    // and the UI never presents, so deniald restores the packaged shell.
+    // Defer past that window; the desktop is stable by then.
+    lweLog('restore: deferring apply past the first-frame window');
+    unawaited(
+      driver
+          .scheduleApply(
+            const Duration(seconds: 25),
+            id,
+            state.settings,
+            shouldRun: () async => (await controller.current()).enabled,
+          )
+          .then(
+            (_) => lweLog('delayed apply finished'),
+            onError: (Object error, StackTrace _) {
+              lweLog('delayed apply failed: $error');
+            },
+          ),
+    );
   }
 }
 

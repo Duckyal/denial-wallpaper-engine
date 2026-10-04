@@ -15,12 +15,17 @@ import 'lwe_driver.dart';
 /// [lastConfigWrite]; a reload that reads back exactly that content is our
 /// own echo and must not restart the engine. External `enabled: false`
 /// stops the wallpaper instead of resurrecting it.
+///
+/// Additionally tracks the file's modification time so a same-content write
+/// (e.g. an external `touch` followed by a revert) does not trigger a
+/// spurious engine restart.
 class LweConfigWatcher {
   LweConfigWatcher({required this.driver});
 
   final LweDriver driver;
   StreamSubscription<FileSystemEvent>? _subscription;
   Timer? _debounce;
+  DateTime? _lastModified;
 
   void start() {
     final file = File(configPath());
@@ -34,15 +39,18 @@ class LweConfigWatcher {
 
   Future<void> _reload() async {
     try {
-      final content = await File(configPath()).readAsString();
-      if (content == lastConfigWrite) return; // our own panel save
+      final file = File(configPath());
+      final stat = await file.stat();
+      if (stat.modified == _lastModified) return;
+      _lastModified = stat.modified;
+      final content = await file.readAsString();
+      if (content == lastConfigWrite) return;
       final json = jsonDecode(content) as Map<String, dynamic>;
       final state = LweState.fromJson(json);
       if (!state.enabled) {
         await driver.stop();
         return;
       }
-      // Apply the new settings to the running process.
       final id = state.currentWallpaperId;
       if (id != null && id.isNotEmpty) {
         await driver.apply(id, state.settings);
