@@ -48,17 +48,25 @@ final discovery = ref.read(workshopDiscoveryProvider);
 final wallpapers = await discovery.getWallpapers();
 ```
 
+### Keyboard Shortcut
+
+The plugin auto-registers **Super+B** on first mount to toggle the wallpaper
+manager panel. If you have already bound a different key to
+`denial_wallpaper_engine.togglePanel` in Denial's keyboard settings, your
+binding is preserved.
+
+To close the panel:
+
+- Press **Super+B** again
+- Press **Esc**
+- Press the system **close-window** shortcut (e.g. Super+Q) — the panel
+  borrows it while open and returns it on close
+
 ### Shell Actions
 
-The plugin provides two shell actions:
-
-1. **Open Settings** (`denial_wallpaper_engine.openSettings`)
-   - Opens the Wallpaper Engine settings panel in Denial's settings
-
-2. **Random Wallpaper** (`denial_wallpaper_engine.randomWallpaper`)
-   - Applies a random wallpaper from your workshop collection
-
-You can bind these actions to keyboard shortcuts in Denial's settings.
+| Action ID | Description |
+| --- | --- |
+| `denial_wallpaper_engine.togglePanel` | Toggle the wallpaper manager panel |
 
 ### Settings
 
@@ -96,4 +104,4 @@ See the main project README for development setup and integration instructions.
 
 ## License
 
-MIT License
+GPL-3.0-or-later

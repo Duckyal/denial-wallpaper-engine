@@ -11,7 +11,7 @@ For plugin development, refer to `docs/DEVELOPMENT.md` (if present) or the
 
 ## Plugin structure
 
-This repository follows the [denial-plugins](https://github.com/denialwm/denial-plugins)
+This repository follows the [denial-wallpaper-engine](https://github.com/Duckyal/denial-wallpaper-engine)
 collection format:
 
 - `plugins/denial_wallpaper_engine/` — the installable Dart package

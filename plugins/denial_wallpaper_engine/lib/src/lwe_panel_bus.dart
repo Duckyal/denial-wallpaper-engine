@@ -16,13 +16,9 @@ class LwePanelBus {
 
   void togglePanel() => _controller.add(LwePanelEvent.toggle);
 
-  void requestRandom() => _controller.add(LwePanelEvent.random);
-
-  void closePanel() => _controller.add(LwePanelEvent.close);
-
   void dispose() {
     _controller.close();
   }
 }
 
-enum LwePanelEvent { toggle, random, close }
+enum LwePanelEvent { toggle }

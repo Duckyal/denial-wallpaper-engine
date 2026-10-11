@@ -3,7 +3,9 @@
 把 **Wallpaper Engine** 的百万壁纸库接进 **denial** 桌面（Wayland 合成器）。
 
 > **当前状态：已重构为 denial 官方插件格式。**
-> 遵循 [denial-plugins](https://github.com/denialwm/denial-plugins) 规范。
+> 遵循 [denial-wallpaper-engine](https://github.com/Duckyal/denial-wallpaper-engine) 规范。
+
+[English](README.en.md)
 
 ---
 
@@ -70,7 +72,8 @@ linux-wallpaperengine 默认 `--layer bottom`。所以壁纸是**独立进程自
 denial-wallpaper-engine/
 ├── plugins.yaml                     # 插件目录清单（供 Denial 发现本仓库）
 ├── AGENTS.md                        # 代理执行规则
-├── README.md
+├── README.md                        # 中文说明
+├── README.en.md                     # English README
 ├── LICENSE
 ├── docs/
 │   ├── DEVELOPMENT.md              # 开发、校验、本地安装流程
@@ -88,7 +91,7 @@ denial-wallpaper-engine/
 │           ├── denial_wallpaper_engine.dart  # @Plugin() 入口与 @Provides 声明
 │           └── src/
 │               ├── lwe_panel.dart            # 壁纸管理面板 UI
-│               ├── lwe_panel_bus.dart        # 面板开/关/随机的跨组件事件总线
+│               ├── lwe_panel_bus.dart        # 面板开/关的跨组件事件总线
 │               ├── lwe_controller.dart       # 状态 + 配置持久化 + 提交草稿
 │               ├── lwe_driver.dart           # 渲染进程驱动（启停/命令行/清理）
 │               ├── lwe_config_watcher.dart   # 外部改动的配置文件监听
@@ -113,21 +116,14 @@ denial-wallpaper-engine/
 ### 通过 Denial 的 Plugins 应用安装（推荐）
 
 1. 运行 Plugins 应用
-2. 点击右上角“添加插件 / Add Plugins”按钮
+2. 应用右上角点击"添加插件 / Add Plugins"按钮
 3. 复制粘贴本仓库地址
-4. 点击“搜索插件 / Find plugins”按钮
-
-### 通过 Denial 的 Plugins 应用安装：
-
-- 运行 Plugins 应用
-- 应用右上角点击“添加插件/Add Plugins”按钮
-- 复制粘贴本项目链接
-- 点击“搜索插件/Find plugins”按钮
+4. 点击"搜索插件 / Find plugins"按钮
 
 ### 通过 denial-plugins CLI
 
 ```sh
-denial-plugins add https://github.com/Duckyal/linux-wallpaperengine-for-Denial.git
+denial-plugins add https://github.com/Duckyal/denial-wallpaper-engine.git
 denial-plugins plan
 denial-plugins build CANDIDATE_ID
 denial-plugins activate CANDIDATE_ID
@@ -148,34 +144,26 @@ denial-plugins activate CANDIDATE_ID
 
 ## 六、日常使用
 
-### GUI 面板（推荐入口）
+### 快捷键
 
-通过快捷键 **super+B** 打开面板
-
-
-按 **Super + B** 打开 / 关闭壁纸管理面板。
-
-该快捷键由插件在首次挂载时自动注册到 `denial_wallpaper_engine.togglePanel`；
-若已在设置里绑定过其它键，会保留你的配置，也可以在 Denial 的键盘设置中自行改绑。
+插件在首次挂载时自动注册 **Super+B** 到 `denial_wallpaper_engine.togglePanel`，
+用于打开 / 关闭壁纸管理面板。若已在设置里绑定过其它键，会保留你的配置，
+也可以在 Denial 的键盘设置中自行改绑。
 
 关闭面板的方式：
 
-- 再按一次 **Super + B**
+- 再按一次 **Super+B**
 - 按 **Esc**
-- 按系统原本的**关闭窗口**快捷键（如 Super + Q）：面板打开期间会临时借用该绑定，
+- 按系统原本的**关闭窗口**快捷键（如 Super+Q）：面板打开期间会临时借用该绑定，
   关闭后原样归还，插件异常退出时也会在下次启动时自动修复
 
-面板内的调整先进草稿，点“应用参数”后一次性写入配置并热生效。
+面板内的调整先进草稿，点"应用参数"后一次性写入配置并热生效。
 
 ### Shell Actions
-
-可在 Denial 的键盘设置里绑定：
 
 | Action ID | 说明 |
 | --- | --- |
 | `denial_wallpaper_engine.togglePanel` | 打开 / 关闭管理面板 |
-| `denial_wallpaper_engine.randomWallpaper` | 随机应用一个已安装的 Workshop 壁纸 |
-| `denial_wallpaper_engine.closePanel` | 关闭面板（面板内部借用，不建议常驻绑定） |
 
 ### 配置文件
 

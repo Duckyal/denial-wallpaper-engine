@@ -25,9 +25,9 @@ denial_plugin:
     - contract: package:denial_flutter_sdk/surfaces.dart#ShellSurface
       count: 2
     - contract: package:denial_flutter_sdk/actions.dart#ShellAction
-      count: 2
+      count: 1
 dependency_overrides: {
-  denial_wallpaper: {
+  denial_wallpaper_engine: {
     path: plugins/denial_wallpaper_engine
   }
 }

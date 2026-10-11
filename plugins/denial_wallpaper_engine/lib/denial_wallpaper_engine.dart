@@ -1,10 +1,10 @@
 /// Denial x Wallpaper Engine integration plugin.
 ///
 /// Drives linux-wallpaperengine as a live desktop background via
-/// wlr-layer-shell. The plugin contributes a [ShellSurface] for wallpaper
-/// process lifecycle management, a manager panel surface, and [ShellAction]s
-/// for shortcut access. Contribution classes must be declared in this entry
-/// library for the composition generator to discover them.
+/// wlr-layer-shell. The plugin contributes two [ShellSurface]s (wallpaper
+/// controller + manager panel) and one [ShellAction] (toggle panel).
+/// Contribution classes must be declared in this entry library for the
+/// composition generator to discover them.
 @Plugin()
 library;
 
@@ -206,8 +206,6 @@ class _LwePanelHostState extends ConsumerState<_LwePanelHost> {
     unawaited(_repairBorrowedShortcuts());
   }
 
-  static const _closePanelActionId = 'denial_wallpaper_engine.closePanel';
-
   Future<void> _loadCloseShortcuts() async {
     try {
       final bridge = ref.read(denialBridgeProvider);
@@ -231,16 +229,10 @@ class _LwePanelHostState extends ConsumerState<_LwePanelHost> {
         target.action == DenialShortcutAction.closeWindow;
   }
 
-  static bool _isBorrowed(DenialShortcutBinding binding) {
-    final target = binding.target;
-    return target is DenialShortcutPluginActionTarget &&
-        target.id == _closePanelActionId;
-  }
-
-  /// Points every "close window" key at [LweClosePanelAction] for as long as
-  /// the panel is open. The compositor consumes global shortcuts before the
-  /// Flutter tree sees them, so borrowing the binding is the only way the
-  /// user's own close key can dismiss the panel.
+  /// Temporarily removes every "close window" shortcut for as long as the
+  /// panel is open. The compositor consumes global shortcuts before the
+  /// Flutter tree sees them; by removing the binding the key event reaches
+  /// the panel's onKeyEvent handler instead.
   Future<void> _borrowCloseShortcuts() async {
     try {
       final bridge = ref.read(denialBridgeProvider);
@@ -251,15 +243,6 @@ class _LwePanelHostState extends ConsumerState<_LwePanelHost> {
         config = await bridge.removeShortcut(
           expectedRevision: config.revision,
           shortcut: binding.shortcut,
-        );
-        config = await bridge.addShortcut(
-          expectedRevision: config.revision,
-          shortcut: DenialShortcutBinding(
-            shortcut: binding.shortcut,
-            target: const DenialShortcutPluginActionTarget(
-              _closePanelActionId,
-            ),
-          ),
         );
         borrowed.add(binding);
       }
@@ -294,31 +277,28 @@ class _LwePanelHostState extends ConsumerState<_LwePanelHost> {
     }
   }
 
-  /// Startup sweep: any key still pointing at the panel's close action (from
-  /// a session that ended mid-panel) goes back to close-window.
+  /// Startup sweep: if a previous session crashed while the panel was open,
+  /// close-window shortcuts may still be missing. Re-add any that we have
+  /// recorded as borrowed. (In the normal flow _borrowedBindings is empty at
+  /// startup; this is a safety net for crash recovery.)
   Future<void> _repairBorrowedShortcuts() async {
+    final borrowed = _borrowedBindings;
+    if (borrowed.isEmpty) return;
     try {
       final bridge = ref.read(denialBridgeProvider);
       var config = await bridge.readShortcutConfiguration();
-      var repaired = 0;
-      for (final binding in config.shortcuts) {
-        if (!_isBorrowed(binding)) continue;
-        config = await bridge.removeShortcut(
-          expectedRevision: config.revision,
-          shortcut: binding.shortcut,
+      for (final binding in borrowed) {
+        final alreadyPresent = config.shortcuts.any(
+          (b) => b.shortcut == binding.shortcut && _isCloseWindow(b),
         );
+        if (alreadyPresent) continue;
         config = await bridge.addShortcut(
           expectedRevision: config.revision,
-          shortcut: DenialShortcutBinding(
-            shortcut: binding.shortcut,
-            target: const DenialShortcutActionTarget(
-              DenialShortcutAction.closeWindow,
-            ),
-          ),
+          shortcut: binding,
         );
-        repaired++;
       }
-      if (repaired > 0) lweLog('repaired $repaired borrowed shortcut(s)');
+      _borrowedBindings = const [];
+      lweLog('repaired borrowed shortcut(s) on startup');
     } on Object catch (error) {
       lweLog('shortcut repair failed: $error');
     }
@@ -378,10 +358,6 @@ class _LwePanelHostState extends ConsumerState<_LwePanelHost> {
         } else {
           _showPanel();
         }
-      case LwePanelEvent.close:
-        if (_visible) await _hidePanel();
-      case LwePanelEvent.random:
-        await ref.read(lweControllerProvider.notifier).applyRandom();
     }
   }
 
@@ -468,52 +444,5 @@ final class LweTogglePanelAction implements ShellAction {
   @override
   Future<void> invoke(ShellActionContext context) async {
     LwePanelBus.instance.togglePanel();
-  }
-}
-
-/// Closes the manager panel. Never bound permanently: the panel borrows the
-/// shell's "close window" key while it is open and hands it back on close.
-@Provides(ShellAction)
-final class LweClosePanelAction implements ShellAction {
-  const LweClosePanelAction();
-
-  @override
-  String get id => 'denial_wallpaper_engine.closePanel';
-
-  @override
-  String get provider => 'Wallpaper Engine';
-
-  @override
-  String label(BuildContext context) => 'Close Wallpaper Engine Panel';
-
-  @override
-  String description(BuildContext context) => '关闭动态壁纸管理面板';
-
-  @override
-  Future<void> invoke(ShellActionContext context) async {
-    LwePanelBus.instance.closePanel();
-  }
-}
-
-/// Applies a random workshop wallpaper immediately.
-@Provides(ShellAction)
-final class LweRandomWallpaperAction implements ShellAction {
-  const LweRandomWallpaperAction();
-
-  @override
-  String get id => 'denial_wallpaper_engine.randomWallpaper';
-
-  @override
-  String get provider => 'Wallpaper Engine';
-
-  @override
-  String label(BuildContext context) => 'Random Wallpaper';
-
-  @override
-  String description(BuildContext context) => '随机应用一个已安装的 Workshop 壁纸';
-
-  @override
-  Future<void> invoke(ShellActionContext context) async {
-    LwePanelBus.instance.requestRandom();
   }
 }
