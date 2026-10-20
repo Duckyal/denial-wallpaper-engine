@@ -3,11 +3,23 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 
 import 'lwe_controller.dart';
+import 'lwe_updater.dart';
 import 'workshop_discovery.dart';
 
 export 'lwe_panel_bus.dart' show LwePanelBus, LwePanelEvent;
+
+/// Bumped every time the panel opens so [lweUpdateCheckProvider] re-runs.
+final lweUpdateNonceProvider = StateProvider<int>((ref) => 0);
+
+/// Runs an update check against the host; recomputes whenever the nonce
+/// changes (i.e. each time the panel is opened).
+final lweUpdateCheckProvider = FutureProvider<LweUpdateResult>((ref) {
+  ref.watch(lweUpdateNonceProvider);
+  return ref.watch(lweUpdaterProvider).checkForUpdate();
+});
 
 /// Panel strings, Chinese when the system locale is Chinese, English
 /// otherwise. Read from the platform dispatcher directly so it works
@@ -65,6 +77,31 @@ class _T {
   static String get applyFailed => isZh ? '应用失败：' : 'Failed to apply: ';
   static String get appliedClosing =>
       isZh ? '配置已应用，正在返回桌面…' : 'Applied — returning to desktop…';
+
+  // --- Update banner ---
+  static String get checkingUpdate => isZh
+      ? '正在检查 linux-wallpaperengine 更新…'
+      : 'Checking for linux-wallpaperengine update…';
+  static String get updateAvailable => isZh ? '有可用更新' : 'Update available';
+  static String get upToDate => isZh ? '已是最新' : 'Up to date';
+  static String get updateNow => isZh ? '更新' : 'Update';
+  static String get installFailed => isZh ? '更新失败：' : 'Update failed: ';
+  static String get updateReleases =>
+      isZh ? '打开 GitHub 发布页' : 'Open GitHub releases';
+  static String get notInstalled => isZh
+      ? '未安装 linux-wallpaperengine，无法设置壁纸。'
+      : 'linux-wallpaperengine is not installed, so wallpapers cannot render.';
+  static String get checkUpdate => isZh ? '检查更新' : 'Check for updates';
+  static String get copyCommand => isZh ? '复制更新命令' : 'Copy update command';
+  static String get openedReleases =>
+      isZh ? '已打开 GitHub 发布页' : 'Opened GitHub releases page';
+  static String get copiedReleases => isZh
+      ? '已复制发布页链接，请粘贴到浏览器打开'
+      : 'Copied releases link — paste it in a browser';
+  static String get noOpener =>
+      isZh ? '无法打开浏览器，也无法复制链接' : 'Could not open a browser or copy the link';
+  static String versionLabel(String current, String latest) =>
+      isZh ? '当前 $current → 最新 $latest' : 'current $current → latest $latest';
 }
 
 /// Full-screen wallpaper manager overlay mounted on the aboveWindows layer.
@@ -237,6 +274,11 @@ class _LweWallpaperPanelState extends ConsumerState<LweWallpaperPanel> {
               Divider(
                 height: 1,
                 color: scheme.outlineVariant.withValues(alpha: .4),
+              ),
+              _UpdateBanner(
+                onCheckAgain: () => ref
+                    .read(lweUpdateNonceProvider.notifier)
+                    .update((n) => n + 1),
               ),
               Expanded(
                 child: Row(
@@ -570,6 +612,197 @@ class _Toast extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Update banner shown at the top of the panel. Runs an update check whenever
+/// the panel opens and renders one of several states: checking, an available
+/// update (with a one-click "Update" when a package manager is known), up to
+/// date, not installed, or an unknown state that offers the GitHub releases
+/// page / a copyable command.
+class _UpdateBanner extends ConsumerStatefulWidget {
+  const _UpdateBanner({required this.onCheckAgain});
+
+  final VoidCallback onCheckAgain;
+
+  @override
+  ConsumerState<_UpdateBanner> createState() => _UpdateBannerState();
+}
+
+class _UpdateBannerState extends ConsumerState<_UpdateBanner> {
+  bool _installing = false;
+
+  Future<void> _install() async {
+    if (_installing) return;
+    setState(() => _installing = true);
+    try {
+      final result = await ref.read(lweUpdaterProvider).installUpdate();
+      if (!mounted) return;
+      _showToast(
+        result.success
+            ? (result.message.isNotEmpty ? result.message : _T.updateNow)
+            : '${_T.installFailed}${result.message}',
+      );
+      if (result.success) {
+        widget.onCheckAgain();
+      }
+    } on Object catch (error) {
+      if (mounted) _showToast('${_T.installFailed}$error');
+    } finally {
+      if (mounted) setState(() => _installing = false);
+    }
+  }
+
+  void _showToast(String text) {
+    // Reuse the panel's toast by calling the nearest panel state.
+    final panel = context.findAncestorStateOfType<_LweWallpaperPanelState>();
+    panel?._showToast(text);
+  }
+
+  /// Opens the GitHub releases page. If no browser opener is available, copies
+  /// the URL to the clipboard so the user can paste it, and reports what
+  /// happened either way (the click must never feel dead).
+  Future<void> _openReleases() async {
+    final opened = await ref.read(lweUpdaterProvider).openReleasesPage();
+    if (opened) {
+      _showToast(_T.openedReleases);
+      return;
+    }
+    final copied = await ref
+        .read(lweUpdaterProvider)
+        .copyToClipboard(LweUpdater.releasesUrl);
+    _showToast(copied ? _T.copiedReleases : _T.noOpener);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final check = ref.watch(lweUpdateCheckProvider);
+
+    // Only show the banner when there is something to act on (an update is
+    // available, or the binary isn't installed). Otherwise stay silent so the
+    // panel doesn't nag when everything is up to date or detection is unknown.
+    return check.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (result) => _buildBanner(context, scheme, result),
+    );
+  }
+
+  Widget _buildBanner(
+    BuildContext context,
+    ColorScheme scheme,
+    LweUpdateResult result,
+  ) {
+    if (result is LweUpdateNotInstalled) {
+      return _BannerShell(
+        icon: Icon(Icons.warning_amber_rounded, color: scheme.error, size: 18),
+        label: _T.notInstalled,
+        trailing: TextButton.icon(
+          icon: const Icon(Icons.open_in_new_rounded, size: 16),
+          label: Text(_T.updateReleases),
+          onPressed: () => _openReleases(),
+        ),
+      );
+    }
+
+    if (result is LweUpdateAvailable) {
+      final local = result.localVersion?.toString() ?? '?';
+      final latest = result.latestVersion.toString();
+      final action = _installing
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : result.actionable
+          ? FilledButton.icon(
+              onPressed: _install,
+              icon: const Icon(Icons.system_update_rounded, size: 16),
+              label: Text(_T.updateNow),
+              style: FilledButton.styleFrom(
+                visualDensity: VisualDensity(horizontal: -2, vertical: -2),
+              ),
+            )
+          : TextButton.icon(
+              icon: const Icon(Icons.open_in_new_rounded, size: 16),
+              label: Text(_T.updateReleases),
+              onPressed: () => _openReleases(),
+            );
+      return _BannerShell(
+        icon: Icon(Icons.new_releases_rounded, color: scheme.primary, size: 18),
+        label: '${_T.updateAvailable} · ${_T.versionLabel(local, latest)}',
+        trailing: action,
+      );
+    }
+
+    if (result is LweUpdateUpToDate) {
+      // Everything is current — don't show anything.
+      return const SizedBox.shrink();
+    }
+
+    // Unknown: we found the binary but couldn't resolve "latest" (offline,
+    // unknown package manager, or a git build). Don't nag; only surface
+    // something actionable when there's actually a detected update.
+    if (result is LweUpdateUnknown) {
+      return const SizedBox.shrink();
+    }
+
+    return const SizedBox.shrink();
+  }
+}
+
+/// Compact banner row: icon + label on the left, action on the right.
+class _BannerShell extends StatelessWidget {
+  const _BannerShell({
+    required this.icon,
+    required this.label,
+    required this.trailing,
+  });
+
+  final Widget icon;
+  final String label;
+  final Widget trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 8, 12, 8),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: .5),
+        border: Border(
+          bottom: BorderSide(
+            color: scheme.outlineVariant.withValues(alpha: .4),
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          SizedBox(width: 18, height: 18, child: Center(child: icon)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 12.5),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          trailing,
+        ],
+      ),
+    );
+  }
+}
+
+/// Tiny spinner used while the update check runs.
+class _TraySpinner extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => const SizedBox(
+    width: 14,
+    height: 14,
+    child: CircularProgressIndicator(strokeWidth: 2),
+  );
 }
 
 class _WallpaperGrid extends ConsumerWidget {

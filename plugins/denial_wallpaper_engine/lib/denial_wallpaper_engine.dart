@@ -34,6 +34,7 @@ import 'src/lwe_debug.dart';
 import 'src/lwe_panel.dart';
 
 export 'src/lwe_driver.dart';
+export 'src/lwe_updater.dart';
 export 'src/lwe_controller.dart';
 export 'src/lwe_config_watcher.dart';
 export 'src/lwe_bootstrap.dart';
@@ -102,6 +103,11 @@ class _LweWallpaperControllerState
       lweLog('watcher started');
       // Restore the last active wallpaper on startup.
       await ref.read(lweBootstrapProvider).restoreOnStartup();
+      // A runtime switch tears this widget down while the await above is in
+      // flight; touching `ref` afterwards throws "Using ref when a widget is
+      // about to or has been unmounted is unsafe", which kills the shell's
+      // first frame and forces a rollback. Re-check before every use.
+      if (!mounted) return;
       ref.read(lweControllerProvider.notifier).ensureRotation();
       lweLog('restore finished');
     } on Object catch (error, stack) {
@@ -114,6 +120,9 @@ class _LweWallpaperControllerState
   Future<void> _registerShortcut() async {
     if (_shortcutsRegistered) return;
     _shortcutsRegistered = true;
+    // Same unmount race as _restore(): this runs from initState's post-frame
+    // callback, and a surface can be torn down before the callback fires.
+    if (!mounted) return;
     try {
       final bridge = ref.read(denialBridgeProvider);
       final config = await bridge.readShortcutConfiguration();
@@ -316,7 +325,8 @@ class _LwePanelHostState extends ConsumerState<_LwePanelHost> {
     final key = parts.removeLast();
     final modifiers = parts.toSet();
     final keyboard = HardwareKeyboard.instance;
-    final wantMeta = modifiers.contains('meta') ||
+    final wantMeta =
+        modifiers.contains('meta') ||
         modifiers.contains('super') ||
         modifiers.contains('cmd');
     final wantCtrl =
@@ -377,6 +387,8 @@ class _LwePanelHostState extends ConsumerState<_LwePanelHost> {
     // claim; query once per open so a drifted flag (crash, external engine
     // start, an older boot) reconciles before the user reads it.
     unawaited(ref.read(lweControllerProvider.notifier).syncRenderingState());
+    // Re-check linux-wallpaperengine for updates every time the panel opens.
+    ref.read(lweUpdateNonceProvider.notifier).update((n) => n + 1);
   }
 
   @override
@@ -405,8 +417,9 @@ class _LwePanelHostState extends ConsumerState<_LwePanelHost> {
         onKeyEvent: (node, event) {
           if (event is KeyDownEvent) {
             if (event.logicalKey == LogicalKeyboardKey.escape ||
-                _closeShortcuts
-                    .any((shortcut) => _matchesShortcut(shortcut, event))) {
+                _closeShortcuts.any(
+                  (shortcut) => _matchesShortcut(shortcut, event),
+                )) {
               unawaited(_hidePanel());
               return KeyEventResult.handled;
             }
@@ -415,9 +428,7 @@ class _LwePanelHostState extends ConsumerState<_LwePanelHost> {
         },
         child: !_visible
             ? const SizedBox.shrink()
-            : LweWallpaperPanel(
-                onClose: _hidePanel,
-              ),
+            : LweWallpaperPanel(onClose: _hidePanel),
       ),
     );
   }
